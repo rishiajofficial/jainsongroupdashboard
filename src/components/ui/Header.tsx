@@ -68,12 +68,16 @@ export function Header() {
       if (data) {
         let avatarUrl;
         if (data.avatar_url) {
-          const { data: avatarData } = await supabase.storage
-            .from('avatars')
-            .getPublicUrl(data.avatar_url);
-            
-          if (avatarData) {
-            avatarUrl = avatarData.publicUrl;
+          try {
+            const { data: avatarData } = await supabase.storage
+              .from('avatars')
+              .getPublicUrl(data.avatar_url);
+              
+            if (avatarData) {
+              avatarUrl = avatarData.publicUrl;
+            }
+          } catch (error) {
+            console.error("Error getting avatar URL:", error);
           }
         }
         

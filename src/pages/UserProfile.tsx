@@ -61,12 +61,16 @@ const UserProfile = () => {
 
         // Get avatar URL if it exists
         if (data.avatar_url) {
-          const { data: avatarData } = await supabase.storage
-            .from('avatars')
-            .getPublicUrl(data.avatar_url);
-            
-          if (avatarData) {
-            setAvatarUrl(avatarData.publicUrl);
+          try {
+            const { data: avatarData } = await supabase.storage
+              .from('avatars')
+              .getPublicUrl(data.avatar_url);
+              
+            if (avatarData) {
+              setAvatarUrl(avatarData.publicUrl);
+            }
+          } catch (error) {
+            console.error("Error getting avatar URL:", error);
           }
         }
       }
@@ -127,7 +131,9 @@ const UserProfile = () => {
       // Update the profile with the avatar URL
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ avatar_url: filePath })
+        .update({ 
+          avatar_url: filePath 
+        })
         .eq('id', userId);
         
       if (updateError) {
@@ -157,14 +163,14 @@ const UserProfile = () => {
 
       const { error } = await supabase
         .from('profiles')
-        .upsert({
-          id: session.user.id,
+        .update({
           full_name: userProfile.fullName,
           email: userProfile.email,
           company: userProfile.company,
           position: userProfile.position,
           updated_at: new Date().toISOString()
-        });
+        })
+        .eq('id', session.user.id);
 
       if (error) {
         console.error("Error saving profile:", error);
