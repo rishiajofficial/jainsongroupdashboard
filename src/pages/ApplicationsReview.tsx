@@ -183,7 +183,7 @@ const ApplicationsReview = () => {
         );
       case 'approved':
         return (
-          <Badge variant="success" className="flex items-center gap-1 bg-green-500">
+          <Badge variant="secondary" className="flex items-center gap-1 bg-green-500 text-white">
             <CheckCircle className="h-3 w-3" />
             Approved
           </Badge>

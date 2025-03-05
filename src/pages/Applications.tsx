@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/ui/Header";
@@ -45,7 +44,6 @@ const Applications = () => {
         return;
       }
 
-      // Get user role from profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
@@ -79,15 +77,11 @@ const Applications = () => {
           job:jobs(id, title)
         `);
 
-      // Filter based on user role
       if (role === 'candidate') {
-        // Candidates see their own applications
         query = query.eq('candidate_id', userId);
       } else if (role === 'manager') {
-        // Managers see applications for jobs they created
         query = query.eq('jobs.created_by', userId);
       }
-      // Admins see all applications (no additional filter)
 
       const { data, error } = await query.order('created_at', { ascending: false });
 
@@ -125,7 +119,7 @@ const Applications = () => {
         );
       case 'approved':
         return (
-          <Badge variant="success" className="flex items-center gap-1 bg-green-500">
+          <Badge variant="secondary" className="flex items-center gap-1 bg-green-500 text-white">
             <CheckCircle className="h-3 w-3" />
             Approved
           </Badge>
@@ -168,7 +162,6 @@ const Applications = () => {
         return;
       }
 
-      // Create a download link for the file
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
       a.href = url;
@@ -176,7 +169,6 @@ const Applications = () => {
       document.body.appendChild(a);
       a.click();
       
-      // Clean up
       URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
@@ -284,7 +276,6 @@ const Applications = () => {
         </div>
       </main>
 
-      {/* Application Details Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
