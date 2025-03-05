@@ -15,8 +15,8 @@ interface ManagerRequest {
   manager_id: string;
   status: string;
   manager: {
-    full_name: string;
-    email: string;
+    full_name: string | null;
+    email: string | null;
     avatar_url: string | null;
   };
 }
@@ -73,6 +73,7 @@ const AdminApprovals = () => {
   // Fetch pending manager approval requests
   const fetchManagerRequests = async () => {
     try {
+      // This is the key change: specifying profiles(id) to clarify the relationship
       const { data, error } = await supabase
         .from('manager_approvals')
         .select(`
@@ -80,7 +81,7 @@ const AdminApprovals = () => {
           created_at,
           manager_id,
           status,
-          manager:profiles(full_name, email, avatar_url)
+          manager:profiles!manager_id(full_name, email, avatar_url)
         `)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
