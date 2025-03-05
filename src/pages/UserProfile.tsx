@@ -2,13 +2,16 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/ui/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Save, Upload } from "lucide-react";
+import { Save, Upload, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+
+type UserRole = 'candidate' | 'manager' | 'admin';
 
 const UserProfile = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -22,6 +25,7 @@ const UserProfile = () => {
     email: "",
     company: "",
     position: "",
+    role: "" as UserRole
   });
 
   useEffect(() => {
@@ -57,6 +61,7 @@ const UserProfile = () => {
           email: data.email || "",
           company: data.company || "",
           position: data.position || "",
+          role: data.role as UserRole || "candidate"
         });
 
         // Get avatar URL if it exists
@@ -165,6 +170,30 @@ const UserProfile = () => {
     }
   };
 
+  // Download avatar image
+  const downloadAvatar = async () => {
+    if (!avatarUrl) {
+      toast.error("No profile picture to download");
+      return;
+    }
+
+    try {
+      const response = await fetch(avatarUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `profile-picture.${blob.type.split('/')[1]}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Error downloading avatar:", error);
+      toast.error("Failed to download profile picture");
+    }
+  };
+
   // Save profile data to Supabase
   const saveProfile = async () => {
     setIsSaving(true);
@@ -202,6 +231,19 @@ const UserProfile = () => {
     }
   };
 
+  // Helper function to get role badge color
+  const getRoleBadgeVariant = (role: UserRole) => {
+    switch (role) {
+      case 'admin':
+        return 'destructive';
+      case 'manager':
+        return 'default';
+      case 'candidate':
+      default:
+        return 'secondary';
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -217,10 +259,19 @@ const UserProfile = () => {
           {/* User Profile Card */}
           <Card>
             <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
-              <CardDescription>
-                Update your profile details
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Personal Information</CardTitle>
+                  <CardDescription>
+                    Update your profile details
+                  </CardDescription>
+                </div>
+                {userProfile.role && (
+                  <Badge variant={getRoleBadgeVariant(userProfile.role as UserRole)} className="capitalize">
+                    {userProfile.role}
+                  </Badge>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-6">
               {isLoading ? (
@@ -261,6 +312,16 @@ const UserProfile = () => {
                           onChange={uploadAvatar}
                           disabled={isUploading}
                         />
+                        {avatarUrl && (
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            onClick={downloadAvatar}
+                            title="Download profile picture"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground">
                         Recommended: Square JPG, PNG. Max 5MB.

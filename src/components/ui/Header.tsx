@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, LogOut, Menu, X, User, Settings } from "lucide-react";
+import { LayoutDashboard, LogOut, Menu, X, User, Settings, FileText, Briefcase, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -15,10 +15,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
+
+type UserRole = 'candidate' | 'manager' | 'admin';
+
+interface UserData {
+  email?: string;
+  avatarUrl?: string;
+  role?: UserRole;
+}
 
 export function Header() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<{ email?: string; avatarUrl?: string } | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -55,7 +64,7 @@ export function Header() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('email, avatar_url')
+        .select('email, avatar_url, role')
         .eq('id', userId)
         .single();
 
@@ -83,7 +92,8 @@ export function Header() {
         
         setUser({ 
           email: data.email || "",
-          avatarUrl: avatarUrl
+          avatarUrl: avatarUrl,
+          role: data.role as UserRole
         });
       }
     } catch (error) {
@@ -111,6 +121,19 @@ export function Header() {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  // Helper function to get role badge color
+  const getRoleBadgeVariant = (role: UserRole) => {
+    switch (role) {
+      case 'admin':
+        return 'destructive';
+      case 'manager':
+        return 'default';
+      case 'candidate':
+      default:
+        return 'secondary';
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 max-w-screen-2xl items-center justify-between">
@@ -131,6 +154,36 @@ export function Header() {
               <Link to="/dashboard" className="text-sm font-medium transition-colors hover:text-primary">
                 Dashboard
               </Link>
+              
+              {/* Role-specific navigation links */}
+              {user?.role === 'candidate' && (
+                <>
+                  <Link to="/jobs" className="text-sm font-medium transition-colors hover:text-primary">
+                    Jobs
+                  </Link>
+                  <Link to="/applications" className="text-sm font-medium transition-colors hover:text-primary">
+                    My Applications
+                  </Link>
+                </>
+              )}
+              
+              {user?.role === 'manager' && (
+                <>
+                  <Link to="/jobs/manage" className="text-sm font-medium transition-colors hover:text-primary">
+                    Manage Jobs
+                  </Link>
+                  <Link to="/applications/review" className="text-sm font-medium transition-colors hover:text-primary">
+                    Review Applications
+                  </Link>
+                </>
+              )}
+              
+              {user?.role === 'admin' && (
+                <Link to="/admin/approvals" className="text-sm font-medium transition-colors hover:text-primary">
+                  Manager Approvals
+                </Link>
+              )}
+              
               <div className="flex items-center gap-4">
                 <TooltipProvider>
                   <Tooltip>
@@ -147,7 +200,16 @@ export function Header() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                          <DropdownMenuLabel>
+                            <div className="flex items-center justify-between">
+                              <span>My Account</span>
+                              {user?.role && (
+                                <Badge variant={getRoleBadgeVariant(user.role)} className="ml-2 capitalize">
+                                  {user.role}
+                                </Badge>
+                              )}
+                            </div>
+                          </DropdownMenuLabel>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => navigate("/user-profile")}>
                             <User className="h-4 w-4 mr-2" />
@@ -216,6 +278,61 @@ export function Header() {
                   <LayoutDashboard className="h-4 w-4 inline mr-2" />
                   Dashboard
                 </Link>
+                
+                {/* Role-specific navigation links */}
+                {user?.role === 'candidate' && (
+                  <>
+                    <Link 
+                      to="/jobs" 
+                      className="block py-2 text-sm font-medium transition-colors hover:text-primary"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <Briefcase className="h-4 w-4 inline mr-2" />
+                      Jobs
+                    </Link>
+                    <Link 
+                      to="/applications" 
+                      className="block py-2 text-sm font-medium transition-colors hover:text-primary"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <FileText className="h-4 w-4 inline mr-2" />
+                      My Applications
+                    </Link>
+                  </>
+                )}
+                
+                {user?.role === 'manager' && (
+                  <>
+                    <Link 
+                      to="/jobs/manage" 
+                      className="block py-2 text-sm font-medium transition-colors hover:text-primary"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <Briefcase className="h-4 w-4 inline mr-2" />
+                      Manage Jobs
+                    </Link>
+                    <Link 
+                      to="/applications/review" 
+                      className="block py-2 text-sm font-medium transition-colors hover:text-primary"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <FileText className="h-4 w-4 inline mr-2" />
+                      Review Applications
+                    </Link>
+                  </>
+                )}
+                
+                {user?.role === 'admin' && (
+                  <Link 
+                    to="/admin/approvals" 
+                    className="block py-2 text-sm font-medium transition-colors hover:text-primary"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Shield className="h-4 w-4 inline mr-2" />
+                    Manager Approvals
+                  </Link>
+                )}
+                
                 <Link 
                   to="/user-profile" 
                   className="block py-2 text-sm font-medium transition-colors hover:text-primary"
@@ -233,9 +350,16 @@ export function Header() {
                   Settings
                 </Link>
                 <div className="pt-2 border-t border-border/40">
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Signed in as {user?.email}
-                  </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-muted-foreground">
+                      Signed in as {user?.email}
+                    </p>
+                    {user?.role && (
+                      <Badge variant={getRoleBadgeVariant(user.role)} className="capitalize">
+                        {user.role}
+                      </Badge>
+                    )}
+                  </div>
                   <Button 
                     variant="outline" 
                     size="sm" 

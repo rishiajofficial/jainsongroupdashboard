@@ -1,11 +1,25 @@
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Plus, User, Briefcase, ClipboardList } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+type UserRole = 'candidate' | 'manager' | 'admin';
+
+interface ProfileData {
+  fullName: string;
+  email: string;
+  role: UserRole;
+}
 
 export function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
-  const [userData, setUserData] = useState<{ email: string; fullName: string } | null>(null);
+  const [userData, setUserData] = useState<ProfileData | null>(null);
+  const [pendingApproval, setPendingApproval] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Load user data from Supabase
@@ -20,7 +34,7 @@ export function Dashboard() {
 
         const { data, error } = await supabase
           .from('profiles')
-          .select('full_name, email')
+          .select('full_name, email, role')
           .eq('id', session.user.id)
           .single();
 
@@ -33,7 +47,21 @@ export function Dashboard() {
           setUserData({
             fullName: data.full_name || "",
             email: data.email || "",
+            role: data.role as UserRole,
           });
+
+          // If user is not a manager, check if they have a pending manager approval
+          if (data.role !== 'manager') {
+            const { data: approvalData, error: approvalError } = await supabase
+              .from('manager_approvals')
+              .select('status')
+              .eq('manager_id', session.user.id)
+              .maybeSingle();
+
+            if (!approvalError && approvalData) {
+              setPendingApproval(approvalData.status === 'pending');
+            }
+          }
         }
       } catch (error) {
         console.error("Error in profile fetch:", error);
@@ -45,12 +73,234 @@ export function Dashboard() {
     fetchUserData();
   }, []);
 
+  const requestManagerRole = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("You must be logged in to request manager role");
+        return;
+      }
+
+      const { error } = await supabase
+        .from('manager_approvals')
+        .insert({
+          manager_id: session.user.id,
+          status: 'pending'
+        });
+
+      if (error) {
+        console.error("Error requesting manager role:", error);
+        if (error.code === '23505') { // Unique violation
+          toast.error("You have already requested manager role");
+        } else {
+          toast.error("Failed to request manager role");
+        }
+        return;
+      }
+
+      setPendingApproval(true);
+      toast.success("Manager role requested successfully");
+    } catch (error) {
+      console.error("Error requesting manager role:", error);
+      toast.error("Failed to request manager role");
+    }
+  };
+
+  const renderRoleBasedContent = () => {
+    if (!userData) return null;
+
+    switch (userData.role) {
+      case 'admin':
+        return (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <User className="mr-2 h-5 w-5" />
+                  Admin Dashboard
+                </CardTitle>
+                <CardDescription>
+                  Manage manager approvals and system settings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <Button 
+                    onClick={() => navigate("/admin/approvals")} 
+                    className="w-full sm:w-auto"
+                  >
+                    View Manager Approval Requests
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Briefcase className="mr-2 h-5 w-5" />
+                  Job Listings
+                </CardTitle>
+                <CardDescription>
+                  View and manage all job listings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={() => navigate("/jobs")} 
+                  className="w-full sm:w-auto"
+                >
+                  View All Jobs
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        );
+        
+      case 'manager':
+        return (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Briefcase className="mr-2 h-5 w-5" />
+                  Manage Job Listings
+                </CardTitle>
+                <CardDescription>
+                  Create and manage job postings
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button 
+                  onClick={() => navigate("/jobs/create")} 
+                  className="w-full sm:w-auto"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create New Job Listing
+                </Button>
+                <Button 
+                  onClick={() => navigate("/jobs/manage")} 
+                  variant="outline" 
+                  className="w-full sm:w-auto"
+                >
+                  Manage My Job Listings
+                </Button>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <ClipboardList className="mr-2 h-5 w-5" />
+                  Applications
+                </CardTitle>
+                <CardDescription>
+                  Review candidate applications
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={() => navigate("/applications/review")} 
+                  className="w-full sm:w-auto"
+                >
+                  Review Applications
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        );
+        
+      case 'candidate':
+      default:
+        return (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Briefcase className="mr-2 h-5 w-5" />
+                  Job Opportunities
+                </CardTitle>
+                <CardDescription>
+                  Browse available job listings
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={() => navigate("/jobs")} 
+                  className="w-full sm:w-auto"
+                >
+                  Browse Available Jobs
+                </Button>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <ClipboardList className="mr-2 h-5 w-5" />
+                  My Applications
+                </CardTitle>
+                <CardDescription>
+                  Track your job applications
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={() => navigate("/applications")} 
+                  className="w-full sm:w-auto"
+                >
+                  View My Applications
+                </Button>
+              </CardContent>
+            </Card>
+            
+            {userData.role === 'candidate' && !pendingApproval && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Become a Manager</CardTitle>
+                  <CardDescription>
+                    Request access to post job listings and review applications
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="mb-4 text-muted-foreground">
+                    As a manager, you'll be able to create job listings and review applications from candidates.
+                  </p>
+                  <Button onClick={requestManagerRole}>
+                    Request Manager Role
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+            
+            {pendingApproval && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Manager Role Request Pending</CardTitle>
+                  <CardDescription>
+                    Your request is awaiting approval from an administrator
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    You will be notified once your request has been processed.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        );
+    }
+  };
+
   return (
     <div className="space-y-8 animate-fade-up">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Welcome to HiringDash</h2>
         <p className="text-muted-foreground">
-          Manage your hiring process efficiently
+          {userData?.role === 'candidate' ? 'Find your next opportunity' : 
+           userData?.role === 'manager' ? 'Manage your hiring process efficiently' :
+           'Administer the hiring platform'}
         </p>
       </div>
 
@@ -67,9 +317,18 @@ export function Dashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">
-            This is your HiringDash dashboard home. You can manage your hiring process from here.
-          </p>
+          {isLoading ? (
+            <div className="flex justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            </div>
+          ) : (
+            <div>
+              <p className="text-muted-foreground mb-2">
+                You are currently logged in as a <span className="font-semibold capitalize">{userData?.role || 'candidate'}</span>.
+              </p>
+              {renderRoleBasedContent()}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
