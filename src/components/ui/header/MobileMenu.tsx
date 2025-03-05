@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { LayoutDashboard, LogOut, User, Settings, FileText, Briefcase, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useUnreadApplications } from "@/hooks/useUnreadApplications";
 
 type UserRole = 'candidate' | 'manager' | 'admin';
 
@@ -34,6 +35,10 @@ const getRoleBadgeVariant = (role: UserRole) => {
 };
 
 export function MobileMenu({ isAuthenticated, user, isOpen, onClose, onLogout }: MobileMenuProps) {
+  const { unreadCount } = useUnreadApplications();
+  const isManager = user?.role === 'manager';
+  const hasUnread = isManager && unreadCount > 0;
+
   if (!isOpen) return null;
 
   return (
@@ -81,7 +86,7 @@ export function MobileMenu({ isAuthenticated, user, isOpen, onClose, onLogout }:
               </>
             )}
             
-            {user?.role === 'manager' && (
+            {isManager && (
               <>
                 <Link 
                   to="/jobs/manage" 
@@ -93,11 +98,21 @@ export function MobileMenu({ isAuthenticated, user, isOpen, onClose, onLogout }:
                 </Link>
                 <Link 
                   to="/applications/review" 
-                  className="block py-2 text-sm font-medium transition-colors hover:text-primary"
+                  className="flex items-center justify-between py-2 text-sm font-medium transition-colors hover:text-primary"
                   onClick={onClose}
                 >
-                  <FileText className="h-4 w-4 inline mr-2" />
-                  Review Applications
+                  <span>
+                    <FileText className="h-4 w-4 inline mr-2" />
+                    Review Applications
+                  </span>
+                  {hasUnread && (
+                    <Badge 
+                      variant="destructive" 
+                      className="ml-2 px-1 min-w-5 h-5 flex items-center justify-center rounded-full"
+                    >
+                      {unreadCount}
+                    </Badge>
+                  )}
                 </Link>
               </>
             )}
