@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [stats, setStats] = useState({
     totalRevenue: "$45,231.89",
     subscriptions: "+2,350",
@@ -16,7 +18,7 @@ export function Dashboard() {
     activeUsers: "+573",
   });
 
-  // New user profile state
+  // User profile state
   const [userProfile, setUserProfile] = useState({
     fullName: "",
     email: "",
@@ -25,23 +27,54 @@ export function Dashboard() {
   });
 
   useEffect(() => {
-    // Simulate data loading
+    // Simulate data loading for stats
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 1000);
 
-    // Load saved user profile data from localStorage
-    const savedProfile = localStorage.getItem("userProfile");
-    if (savedProfile) {
-      try {
-        setUserProfile(JSON.parse(savedProfile));
-      } catch (e) {
-        console.error("Error parsing saved profile", e);
-      }
-    }
+    // Load user profile data from Supabase
+    fetchUserProfile();
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Fetch user profile from Supabase
+  const fetchUserProfile = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("No active session found");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching profile:", error);
+        toast.error("Failed to load profile data");
+        return;
+      }
+
+      if (data) {
+        setUserProfile({
+          fullName: data.full_name || "",
+          email: data.email || "",
+          company: data.company || "",
+          position: data.position || "",
+        });
+      }
+    } catch (error) {
+      console.error("Error in profile fetch:", error);
+      toast.error("Failed to load profile data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,10 +85,41 @@ export function Dashboard() {
     }));
   };
 
-  // Save profile data
-  const saveProfile = () => {
-    localStorage.setItem("userProfile", JSON.stringify(userProfile));
-    toast.success("Profile data saved successfully");
+  // Save profile data to Supabase
+  const saveProfile = async () => {
+    setIsSaving(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("No active session found");
+        return;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: session.user.id,
+          full_name: userProfile.fullName,
+          email: userProfile.email,
+          company: userProfile.company,
+          position: userProfile.position,
+          updated_at: new Date()
+        });
+
+      if (error) {
+        console.error("Error saving profile:", error);
+        toast.error("Failed to save profile data");
+        return;
+      }
+
+      toast.success("Profile data saved successfully");
+    } catch (error) {
+      console.error("Error in save profile:", error);
+      toast.error("Failed to save profile data");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -98,7 +162,7 @@ export function Dashboard() {
         />
       </div>
 
-      {/* New User Profile Card */}
+      {/* User Profile Card */}
       <Card>
         <CardHeader>
           <CardTitle>User Profile</CardTitle>
@@ -152,9 +216,9 @@ export function Dashboard() {
           </div>
         </CardContent>
         <CardFooter>
-          <Button onClick={saveProfile} className="w-full sm:w-auto">
+          <Button onClick={saveProfile} className="w-full sm:w-auto" disabled={isSaving}>
             <Save className="mr-2 h-4 w-4" />
-            Save Profile
+            {isSaving ? "Saving..." : "Save Profile"}
           </Button>
         </CardFooter>
       </Card>

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 type AuthFormProps = {
   mode: "login" | "signup";
@@ -15,6 +16,7 @@ type AuthFormProps = {
 export function AuthForm({ mode }: AuthFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -24,19 +26,37 @@ export function AuthForm({ mode }: AuthFormProps) {
     setLoading(true);
     
     try {
-      // For demonstration purposes, we're simulating authentication
-      // In a real app, this would connect to your backend/Supabase
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Using localStorage to simulate auth state
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("user", JSON.stringify({ email }));
-      
-      toast.success(`Successfully ${mode === "login" ? "logged in" : "signed up"}!`);
-      navigate("/dashboard");
-    } catch (error) {
-      toast.error("Authentication failed. Please try again.");
+      if (mode === "login") {
+        // Log in with Supabase
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+        
+        toast.success("Logged in successfully!");
+        navigate("/dashboard");
+      } else {
+        // Sign up with Supabase
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+            },
+          },
+        });
+
+        if (error) throw error;
+        
+        toast.success("Account created successfully! You can now log in.");
+        navigate("/login");
+      }
+    } catch (error: any) {
       console.error("Auth error:", error);
+      toast.error(error.message || "Authentication failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -58,6 +78,19 @@ export function AuthForm({ mode }: AuthFormProps) {
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
+          {mode === "signup" && (
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input
+                id="fullName"
+                placeholder="John Doe"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+                className="h-11"
+              />
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
