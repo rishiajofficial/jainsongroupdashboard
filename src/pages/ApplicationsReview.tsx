@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/ui/Header";
@@ -585,7 +584,7 @@ const ApplicationsReview = () => {
                   </span>
                 </div>
               )}
-            </DialogHeader>
+            </DialogDescription>
           </DialogHeader>
           
           {selectedApplication && (
