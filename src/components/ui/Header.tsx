@@ -2,9 +2,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, LogOut, Menu, X, User, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function Header() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -81,13 +91,44 @@ export function Header() {
                 Dashboard
               </Link>
               <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground">
-                  {user?.email}
-                </span>
-                <Button variant="outline" size="sm" onClick={handleLogout}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Log out
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="rounded-full">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src="" alt="User" />
+                              <AvatarFallback className="bg-primary text-primary-foreground">
+                                {user?.email?.charAt(0).toUpperCase() || "U"}
+                              </AvatarFallback>
+                            </Avatar>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => navigate("/user-profile")}>
+                            <User className="h-4 w-4 mr-2" />
+                            User Profile
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate("/settings")}>
+                            <Settings className="h-4 w-4 mr-2" />
+                            Settings
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={handleLogout}>
+                            <LogOut className="h-4 w-4 mr-2" />
+                            Log out
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Profile</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </>
           ) : (
@@ -133,6 +174,22 @@ export function Header() {
                 >
                   <LayoutDashboard className="h-4 w-4 inline mr-2" />
                   Dashboard
+                </Link>
+                <Link 
+                  to="/user-profile" 
+                  className="block py-2 text-sm font-medium transition-colors hover:text-primary"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <User className="h-4 w-4 inline mr-2" />
+                  User Profile
+                </Link>
+                <Link 
+                  to="/settings" 
+                  className="block py-2 text-sm font-medium transition-colors hover:text-primary"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Settings className="h-4 w-4 inline mr-2" />
+                  Settings
                 </Link>
                 <div className="pt-2 border-t border-border/40">
                   <p className="text-sm text-muted-foreground mb-2">
