@@ -12,6 +12,11 @@ import NotFound from "./pages/NotFound";
 import UserProfile from "./pages/UserProfile";
 import Settings from "./pages/Settings";
 import AdminApprovals from "./pages/AdminApprovals";
+import Jobs from "./pages/Jobs";
+import JobApplicationPage from "./pages/JobApplicationPage";
+import Applications from "./pages/Applications";
+import JobsManage from "./pages/JobsManage";
+import ApplicationsReview from "./pages/ApplicationsReview";
 
 const queryClient = new QueryClient();
 
@@ -29,12 +34,17 @@ const App = () => (
           <Route path="/user-profile" element={<UserProfile />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/admin/approvals" element={<AdminApprovals />} />
-          {/* Jobs and Applications routes - These will be implemented later */}
-          <Route path="/jobs" element={<NotFound />} />
-          <Route path="/jobs/create" element={<NotFound />} />
-          <Route path="/jobs/manage" element={<NotFound />} />
-          <Route path="/applications" element={<NotFound />} />
-          <Route path="/applications/review" element={<NotFound />} />
+          
+          {/* Jobs routes */}
+          <Route path="/jobs" element={<Jobs />} />
+          <Route path="/jobs/:jobId/apply" element={<JobApplicationPage />} />
+          <Route path="/jobs/create" element={<JobsManage />} />
+          <Route path="/jobs/manage" element={<JobsManage />} />
+          
+          {/* Applications routes */}
+          <Route path="/applications" element={<Applications />} />
+          <Route path="/applications/review" element={<ApplicationsReview />} />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
