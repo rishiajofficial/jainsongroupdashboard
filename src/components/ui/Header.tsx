@@ -149,6 +149,10 @@ export function Header() {
             Home
           </Link>
           
+          <Link to="/jobs" className="text-sm font-medium transition-colors hover:text-primary">
+            Jobs
+          </Link>
+          
           {isAuthenticated ? (
             <>
               <Link to="/dashboard" className="text-sm font-medium transition-colors hover:text-primary">
@@ -158,9 +162,6 @@ export function Header() {
               {/* Role-specific navigation links */}
               {user?.role === 'candidate' && (
                 <>
-                  <Link to="/jobs" className="text-sm font-medium transition-colors hover:text-primary">
-                    Jobs
-                  </Link>
                   <Link to="/applications" className="text-sm font-medium transition-colors hover:text-primary">
                     My Applications
                   </Link>
@@ -268,6 +269,15 @@ export function Header() {
               Home
             </Link>
             
+            <Link 
+              to="/jobs" 
+              className="block py-2 text-sm font-medium transition-colors hover:text-primary"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <Briefcase className="h-4 w-4 inline mr-2" />
+              Jobs
+            </Link>
+            
             {isAuthenticated ? (
               <>
                 <Link 
@@ -282,14 +292,6 @@ export function Header() {
                 {/* Role-specific navigation links */}
                 {user?.role === 'candidate' && (
                   <>
-                    <Link 
-                      to="/jobs" 
-                      className="block py-2 text-sm font-medium transition-colors hover:text-primary"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <Briefcase className="h-4 w-4 inline mr-2" />
-                      Jobs
-                    </Link>
                     <Link 
                       to="/applications" 
                       className="block py-2 text-sm font-medium transition-colors hover:text-primary"
