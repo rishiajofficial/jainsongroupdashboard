@@ -95,7 +95,21 @@ export function Header() {
 
   const handleLogout = async () => {
     try {
+      // First check if we have a session to prevent "Auth session missing" error
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        // If no session, just clear state and redirect
+        setIsAuthenticated(false);
+        setUser(null);
+        toast.success("Logged out successfully");
+        navigate("/");
+        return;
+      }
+      
+      // If we have a session, sign out properly
       const { error } = await supabase.auth.signOut();
+      
       if (error) throw error;
       
       setIsAuthenticated(false);
@@ -104,7 +118,11 @@ export function Header() {
       navigate("/");
     } catch (error: any) {
       console.error("Logout error:", error);
-      toast.error(error.message || "Error logging out");
+      // Even if there's an error, we should still reset the client state
+      setIsAuthenticated(false);
+      setUser(null);
+      toast.error(error.message || "Error logging out, but you've been logged out locally");
+      navigate("/");
     }
   };
 
