@@ -68,6 +68,7 @@ const UserProfile = () => {
               
             if (avatarData) {
               setAvatarUrl(avatarData.publicUrl);
+              console.log("Avatar URL loaded:", avatarData.publicUrl);
             }
           } catch (error) {
             console.error("Error getting avatar URL:", error);
@@ -102,6 +103,13 @@ const UserProfile = () => {
       
       const file = event.target.files[0];
       const fileExt = file.name.split('.').pop();
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      
+      // Check file size
+      if (file.size > maxSize) {
+        toast.error("File size must be less than 5MB");
+        return;
+      }
       
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -112,20 +120,26 @@ const UserProfile = () => {
       const userId = session.user.id;
       const filePath = `${userId}.${fileExt}`;
       
+      console.log("Uploading file to path:", filePath);
+      
       // Upload the file to Supabase storage
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, { upsert: true });
         
       if (uploadError) {
+        console.error("Upload error:", uploadError);
         throw uploadError;
       }
+      
+      console.log("Upload successful:", uploadData);
       
       // Get the public URL
       const { data } = await supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
         
+      console.log("Public URL:", data);
       setAvatarUrl(data.publicUrl);
       
       // Update the profile with the avatar URL
@@ -137,6 +151,7 @@ const UserProfile = () => {
         .eq('id', userId);
         
       if (updateError) {
+        console.error("Profile update error:", updateError);
         throw updateError;
       }
       
