@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { Header } from "@/components/ui/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Save, Upload, Download } from "lucide-react";
+import { Save, Upload } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ const UserProfile = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
+  // User profile state
   const [userProfile, setUserProfile] = useState({
     fullName: "",
     email: "",
@@ -23,9 +25,11 @@ const UserProfile = () => {
   });
 
   useEffect(() => {
+    // Load user profile data from Supabase
     fetchUserProfile();
   }, []);
 
+  // Fetch user profile from Supabase
   const fetchUserProfile = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -55,6 +59,7 @@ const UserProfile = () => {
           position: data.position || "",
         });
 
+        // Get avatar URL if it exists
         if (data.avatar_url) {
           try {
             const { data: avatarData } = await supabase.storage
@@ -78,6 +83,7 @@ const UserProfile = () => {
     }
   };
 
+  // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setUserProfile(prev => ({
@@ -86,6 +92,7 @@ const UserProfile = () => {
     }));
   };
 
+  // Upload avatar image
   const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       setIsUploading(true);
@@ -98,6 +105,7 @@ const UserProfile = () => {
       const fileExt = file.name.split('.').pop();
       const maxSize = 5 * 1024 * 1024; // 5MB
       
+      // Check file size
       if (file.size > maxSize) {
         toast.error("File size must be less than 5MB");
         return;
@@ -114,6 +122,7 @@ const UserProfile = () => {
       
       console.log("Uploading file to path:", filePath);
       
+      // Upload the file to Supabase storage
       const { error: uploadError, data: uploadData } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, { upsert: true });
@@ -125,6 +134,7 @@ const UserProfile = () => {
       
       console.log("Upload successful:", uploadData);
       
+      // Get the public URL
       const { data } = await supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
@@ -132,6 +142,7 @@ const UserProfile = () => {
       console.log("Public URL:", data);
       setAvatarUrl(data.publicUrl);
       
+      // Update the profile with the avatar URL
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ 
@@ -154,30 +165,7 @@ const UserProfile = () => {
     }
   };
 
-  const downloadAvatar = async () => {
-    try {
-      if (!avatarUrl) {
-        toast.error("No profile picture to download");
-        return;
-      }
-
-      const link = document.createElement("a");
-      link.href = avatarUrl;
-      
-      const filename = avatarUrl.split("/").pop() || "profile-picture";
-      link.download = filename;
-      
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast.success("Download started");
-    } catch (error) {
-      console.error("Error downloading avatar:", error);
-      toast.error("Failed to download profile picture");
-    }
-  };
-
+  // Save profile data to Supabase
   const saveProfile = async () => {
     setIsSaving(true);
     try {
@@ -226,6 +214,7 @@ const UserProfile = () => {
             </p>
           </div>
 
+          {/* User Profile Card */}
           <Card>
             <CardHeader>
               <CardTitle>Personal Information</CardTitle>
@@ -243,6 +232,7 @@ const UserProfile = () => {
                 </div>
               ) : (
                 <>
+                  {/* Profile Picture Section */}
                   <div className="flex flex-col items-center space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
                     <Avatar className="h-24 w-24">
                       <AvatarImage src={avatarUrl || ""} alt="Profile picture" />
@@ -271,18 +261,6 @@ const UserProfile = () => {
                           onChange={uploadAvatar}
                           disabled={isUploading}
                         />
-                        
-                        {avatarUrl && (
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={downloadAvatar}
-                            disabled={isUploading}
-                          >
-                            <Download className="mr-2 h-4 w-4" />
-                            Download
-                          </Button>
-                        )}
                       </div>
                       <p className="text-xs text-muted-foreground">
                         Recommended: Square JPG, PNG. Max 5MB.
