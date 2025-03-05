@@ -20,16 +20,15 @@ export function useUnreadApplications() {
         // Get unread applications (applications with 'pending' status)
         const { data, error } = await supabase
           .from('applications')
-          .select('id, status')
-          .eq('status', 'pending')
-          .count();
+          .select('*')
+          .eq('status', 'pending');
 
         if (error) {
           console.error("Error fetching unread applications:", error);
           return;
         }
 
-        setUnreadCount(data?.count || 0);
+        setUnreadCount(data?.length || 0);
       } catch (error) {
         console.error("Error in unread applications hook:", error);
       } finally {
