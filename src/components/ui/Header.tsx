@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LayoutDashboard, LogOut, Menu, X } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export function Header() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -12,25 +13,47 @@ export function Header() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check authentication status from localStorage
-    const authStatus = localStorage.getItem("isAuthenticated") === "true";
-    setIsAuthenticated(authStatus);
-    
-    if (authStatus) {
-      const userData = localStorage.getItem("user");
-      if (userData) {
-        setUser(JSON.parse(userData));
+    // Get the initial session
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+      if (session?.user) {
+        setUser({ email: session.user.email });
       }
-    }
+    };
+    
+    checkSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event, session);
+      setIsAuthenticated(!!session);
+      if (session?.user) {
+        setUser({ email: session.user.email });
+      } else {
+        setUser(null);
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("user");
-    setIsAuthenticated(false);
-    setUser(null);
-    toast.success("Successfully logged out");
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      setIsAuthenticated(false);
+      setUser(null);
+      toast.success("Successfully logged out");
+      navigate("/");
+    } catch (error: any) {
+      console.error("Logout error:", error);
+      toast.error(error.message || "Error logging out");
+    }
   };
 
   const toggleMobileMenu = () => {
