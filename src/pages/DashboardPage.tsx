@@ -56,6 +56,25 @@ const DashboardPage = () => {
     };
   }, [navigate, isLoading]);
 
+  // Check for stale logins on page load
+  useEffect(() => {
+    // Force authentication check on page load
+    const validateAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          // Clear any potentially stale state
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error("Session validation error:", error);
+        setIsAuthenticated(false);
+      }
+    };
+    
+    validateAuth();
+  }, []);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">

@@ -1,10 +1,9 @@
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, User, Briefcase, ClipboardList } from "lucide-react";
+import { User, Briefcase, ClipboardList } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 type UserRole = 'candidate' | 'manager' | 'admin';
@@ -18,7 +17,6 @@ interface ProfileData {
 export function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState<ProfileData | null>(null);
-  const [pendingApproval, setPendingApproval] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -49,19 +47,6 @@ export function Dashboard() {
             email: data.email || "",
             role: data.role as UserRole,
           });
-
-          // If user is not a manager, check if they have a pending manager approval
-          if (data.role !== 'manager') {
-            const { data: approvalData, error: approvalError } = await supabase
-              .from('manager_approvals')
-              .select('status')
-              .eq('manager_id', session.user.id)
-              .maybeSingle();
-
-            if (!approvalError && approvalData) {
-              setPendingApproval(approvalData.status === 'pending');
-            }
-          }
         }
       } catch (error) {
         console.error("Error in profile fetch:", error);
@@ -72,39 +57,6 @@ export function Dashboard() {
 
     fetchUserData();
   }, []);
-
-  const requestManagerRole = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("You must be logged in to request manager role");
-        return;
-      }
-
-      const { error } = await supabase
-        .from('manager_approvals')
-        .insert({
-          manager_id: session.user.id,
-          status: 'pending'
-        });
-
-      if (error) {
-        console.error("Error requesting manager role:", error);
-        if (error.code === '23505') { // Unique violation
-          toast.error("You have already requested manager role");
-        } else {
-          toast.error("Failed to request manager role");
-        }
-        return;
-      }
-
-      setPendingApproval(true);
-      toast.success("Manager role requested successfully");
-    } catch (error) {
-      console.error("Error requesting manager role:", error);
-      toast.error("Failed to request manager role");
-    }
-  };
 
   const renderRoleBasedContent = () => {
     if (!userData) return null;
@@ -120,7 +72,7 @@ export function Dashboard() {
                   Admin Dashboard
                 </CardTitle>
                 <CardDescription>
-                  Manage manager approvals and system settings
+                  Manage system settings
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -175,7 +127,6 @@ export function Dashboard() {
                   onClick={() => navigate("/jobs/create")} 
                   className="w-full sm:w-auto"
                 >
-                  <Plus className="mr-2 h-4 w-4" />
                   Create New Job Listing
                 </Button>
                 <Button 
@@ -253,41 +204,6 @@ export function Dashboard() {
                 </Button>
               </CardContent>
             </Card>
-            
-            {userData.role === 'candidate' && !pendingApproval && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Become a Manager</CardTitle>
-                  <CardDescription>
-                    Request access to post job listings and review applications
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="mb-4 text-muted-foreground">
-                    As a manager, you'll be able to create job listings and review applications from candidates.
-                  </p>
-                  <Button onClick={requestManagerRole}>
-                    Request Manager Role
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-            
-            {pendingApproval && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Manager Role Request Pending</CardTitle>
-                  <CardDescription>
-                    Your request is awaiting approval from an administrator
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    You will be notified once your request has been processed.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
           </div>
         );
     }

@@ -12,6 +12,7 @@ const Login = () => {
   useEffect(() => {
     // Check if user is already authenticated
     const checkAuth = async () => {
+      // Clear any potentially stale auth data in localStorage
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {

@@ -100,28 +100,34 @@ export function Header() {
 
   const handleLogout = async () => {
     try {
-      // Make sure to clear all sessions for a complete logout
+      // Complete logout - clear all sessions and storage
       const { error } = await supabase.auth.signOut({ scope: 'global' });
       
       if (error) throw error;
       
-      // Always update local state
+      // Update local state
       setIsAuthenticated(false);
       setUser(null);
       toast.success("Successfully logged out");
       
-      // Clear any lingering data from localStorage that might be related to authentication
-      localStorage.removeItem('supabase.auth.token');
+      // Clear all Supabase-related data from localStorage
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('supabase.') || key.includes('supabase')) {
+          localStorage.removeItem(key);
+        }
+      });
       
-      // Navigate to home after successful logout
-      navigate("/");
+      // Force browser refresh to clear any cached authentication state
+      window.location.href = "/";
     } catch (error: any) {
       console.error("Logout error:", error);
       // Even if there's an error, we should still reset the client state
       setIsAuthenticated(false);
       setUser(null);
       toast.error(error.message || "Error logging out, but you've been logged out locally");
-      navigate("/");
+      
+      // Force browser refresh to clear any cached authentication state
+      window.location.href = "/";
     }
   };
 
