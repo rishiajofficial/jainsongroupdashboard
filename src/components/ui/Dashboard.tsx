@@ -1,7 +1,11 @@
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Calendar, CreditCard, DollarSign, Users } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { BarChart, Calendar, CreditCard, DollarSign, Users, Save } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
@@ -12,14 +16,47 @@ export function Dashboard() {
     activeUsers: "+573",
   });
 
+  // New user profile state
+  const [userProfile, setUserProfile] = useState({
+    fullName: "",
+    email: "",
+    company: "",
+    position: "",
+  });
+
   useEffect(() => {
     // Simulate data loading
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 1000);
 
+    // Load saved user profile data from localStorage
+    const savedProfile = localStorage.getItem("userProfile");
+    if (savedProfile) {
+      try {
+        setUserProfile(JSON.parse(savedProfile));
+      } catch (e) {
+        console.error("Error parsing saved profile", e);
+      }
+    }
+
     return () => clearTimeout(timer);
   }, []);
+
+  // Handle input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setUserProfile(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Save profile data
+  const saveProfile = () => {
+    localStorage.setItem("userProfile", JSON.stringify(userProfile));
+    toast.success("Profile data saved successfully");
+  };
 
   return (
     <div className="space-y-8 animate-fade-up">
@@ -60,6 +97,67 @@ export function Dashboard() {
           loading={isLoading}
         />
       </div>
+
+      {/* New User Profile Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>User Profile</CardTitle>
+          <CardDescription>
+            Update your profile information
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input 
+                id="fullName" 
+                name="fullName" 
+                placeholder="John Doe" 
+                value={userProfile.fullName} 
+                onChange={handleInputChange} 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                name="email" 
+                type="email" 
+                placeholder="john@example.com" 
+                value={userProfile.email} 
+                onChange={handleInputChange} 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="company">Company</Label>
+              <Input 
+                id="company" 
+                name="company" 
+                placeholder="Acme Inc." 
+                value={userProfile.company} 
+                onChange={handleInputChange} 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="position">Position</Label>
+              <Input 
+                id="position" 
+                name="position" 
+                placeholder="Software Engineer" 
+                value={userProfile.position} 
+                onChange={handleInputChange} 
+              />
+            </div>
+          </div>
+        </CardContent>
+        <CardFooter>
+          <Button onClick={saveProfile} className="w-full sm:w-auto">
+            <Save className="mr-2 h-4 w-4" />
+            Save Profile
+          </Button>
+        </CardFooter>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
