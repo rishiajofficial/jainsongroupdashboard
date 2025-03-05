@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { BarChart, Calendar, CreditCard, DollarSign, Users, Save } from "lucide-react";
@@ -104,7 +103,7 @@ export function Dashboard() {
           email: userProfile.email,
           company: userProfile.company,
           position: userProfile.position,
-          updated_at: new Date()
+          updated_at: new Date().toISOString() // Convert Date to ISO string format
         });
 
       if (error) {
