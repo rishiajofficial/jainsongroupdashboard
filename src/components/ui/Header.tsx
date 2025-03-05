@@ -18,7 +18,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 export function Header() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<{ email?: string } | null>(null);
+  const [user, setUser] = useState<{ email?: string; avatarUrl?: string } | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -28,7 +28,7 @@ export function Header() {
       const { data: { session } } = await supabase.auth.getSession();
       setIsAuthenticated(!!session);
       if (session?.user) {
-        setUser({ email: session.user.email });
+        await fetchUserProfile(session.user.id);
       }
     };
     
@@ -39,7 +39,7 @@ export function Header() {
       console.log("Auth state changed:", event, session);
       setIsAuthenticated(!!session);
       if (session?.user) {
-        setUser({ email: session.user.email });
+        fetchUserProfile(session.user.id);
       } else {
         setUser(null);
       }
@@ -50,6 +50,43 @@ export function Header() {
       subscription.unsubscribe();
     };
   }, []);
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('email, avatar_url')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error("Error fetching profile:", error);
+        setUser({ email: "" });
+        return;
+      }
+
+      if (data) {
+        let avatarUrl;
+        if (data.avatar_url) {
+          const { data: avatarData } = await supabase.storage
+            .from('avatars')
+            .getPublicUrl(data.avatar_url);
+            
+          if (avatarData) {
+            avatarUrl = avatarData.publicUrl;
+          }
+        }
+        
+        setUser({ 
+          email: data.email || "",
+          avatarUrl: avatarUrl
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      setUser({ email: "" });
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -75,7 +112,7 @@ export function Header() {
       <div className="container flex h-16 max-w-screen-2xl items-center justify-between">
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center space-x-2">
-            <span className="text-xl font-bold tracking-tight">Dashboard</span>
+            <span className="text-xl font-bold tracking-tight">HiringDash</span>
           </Link>
         </div>
 
@@ -98,7 +135,7 @@ export function Header() {
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="rounded-full">
                             <Avatar className="h-8 w-8">
-                              <AvatarImage src="" alt="User" />
+                              <AvatarImage src={user?.avatarUrl || ""} alt="User" />
                               <AvatarFallback className="bg-primary text-primary-foreground">
                                 {user?.email?.charAt(0).toUpperCase() || "U"}
                               </AvatarFallback>
