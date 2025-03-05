@@ -37,10 +37,15 @@ export function Header() {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event, session);
-      setIsAuthenticated(!!session);
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      } else {
+      
+      // Only update state if the event is meaningful
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        setIsAuthenticated(true);
+        if (session?.user) {
+          fetchUserProfile(session.user.id);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
         setUser(null);
       }
     });
@@ -95,26 +100,20 @@ export function Header() {
 
   const handleLogout = async () => {
     try {
-      // First check if we have a session to prevent "Auth session missing" error
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        // If no session, just clear state and redirect
-        setIsAuthenticated(false);
-        setUser(null);
-        toast.success("Logged out successfully");
-        navigate("/");
-        return;
-      }
-      
-      // If we have a session, sign out properly
-      const { error } = await supabase.auth.signOut();
+      // Make sure to clear all sessions for a complete logout
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
       
       if (error) throw error;
       
+      // Always update local state
       setIsAuthenticated(false);
       setUser(null);
       toast.success("Successfully logged out");
+      
+      // Clear any lingering data from localStorage that might be related to authentication
+      localStorage.removeItem('supabase.auth.token');
+      
+      // Navigate to home after successful logout
       navigate("/");
     } catch (error: any) {
       console.error("Logout error:", error);

@@ -18,7 +18,10 @@ const DashboardPage = () => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {
-          toast.error("Please log in to access the dashboard");
+          // Only show toast if we're not on initial load
+          if (!isLoading) {
+            toast.error("Please log in to access the dashboard");
+          }
           navigate("/login");
           return;
         }
@@ -37,9 +40,11 @@ const DashboardPage = () => {
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setIsAuthenticated(!!session);
-        if (!session) {
+      (event, session) => {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          setIsAuthenticated(true);
+        } else if (event === 'SIGNED_OUT') {
+          setIsAuthenticated(false);
           navigate("/login");
         }
       }
@@ -49,7 +54,7 @@ const DashboardPage = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, isLoading]);
 
   if (isLoading) {
     return (
