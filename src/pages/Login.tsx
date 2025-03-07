@@ -50,6 +50,6 @@ const Login = () => {
       </main>
     </div>
   );
-}
+};
 
 export default Login;

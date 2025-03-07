@@ -45,6 +45,14 @@ export function MobileMenu({ isAuthenticated, user, isOpen, onClose, onLogout }:
     <div className="md:hidden border-t border-border/40 animate-fade-in">
       <div className="container py-4 space-y-4">
         <Link 
+          to="/" 
+          className="block py-2 text-sm font-medium transition-colors hover:text-primary"
+          onClick={onClose}
+        >
+          Home
+        </Link>
+        
+        <Link 
           to="/jobs" 
           className="block py-2 text-sm font-medium transition-colors hover:text-primary"
           onClick={onClose}
@@ -63,6 +71,62 @@ export function MobileMenu({ isAuthenticated, user, isOpen, onClose, onLogout }:
               <LayoutDashboard className="h-4 w-4 inline mr-2" />
               Dashboard
             </Link>
+            
+            {/* Role-specific navigation links */}
+            {user?.role === 'candidate' && (
+              <>
+                <Link 
+                  to="/applications" 
+                  className="block py-2 text-sm font-medium transition-colors hover:text-primary"
+                  onClick={onClose}
+                >
+                  <FileText className="h-4 w-4 inline mr-2" />
+                  My Applications
+                </Link>
+              </>
+            )}
+            
+            {isManager && (
+              <>
+                <Link 
+                  to="/jobs/manage" 
+                  className="block py-2 text-sm font-medium transition-colors hover:text-primary"
+                  onClick={onClose}
+                >
+                  <Briefcase className="h-4 w-4 inline mr-2" />
+                  Manage Jobs
+                </Link>
+                <Link 
+                  to="/applications/review" 
+                  className="flex items-center justify-between py-2 text-sm font-medium transition-colors hover:text-primary"
+                  onClick={onClose}
+                >
+                  <span>
+                    <FileText className="h-4 w-4 inline mr-2" />
+                    Review Applications
+                  </span>
+                  {hasUnread && (
+                    <Badge 
+                      variant="destructive" 
+                      className="ml-2 px-1 min-w-5 h-5 flex items-center justify-center rounded-full"
+                    >
+                      {unreadCount}
+                    </Badge>
+                  )}
+                </Link>
+              </>
+            )}
+            
+            {user?.role === 'admin' && (
+              <Link 
+                to="/admin/approvals" 
+                className="block py-2 text-sm font-medium transition-colors hover:text-primary"
+                onClick={onClose}
+              >
+                <Shield className="h-4 w-4 inline mr-2" />
+                Manager Approvals
+              </Link>
+            )}
             
             <Link 
               to="/user-profile" 
