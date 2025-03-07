@@ -13,14 +13,21 @@ const Login = () => {
     // Check if user is already authenticated
     const checkAuth = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Auth check error:", error);
+          setIsLoading(false);
+          return;
+        }
         
         if (data.session) {
           navigate("/dashboard");
+        } else {
+          setIsLoading(false);
         }
       } catch (error) {
         console.error("Auth check error:", error);
-      } finally {
         setIsLoading(false);
       }
     };
@@ -32,6 +39,9 @@ const Login = () => {
       (event, session) => {
         if (event === 'SIGNED_IN' && session) {
           navigate("/dashboard");
+        } else if (event === 'SIGNED_OUT') {
+          // Force redirection to login page on sign out
+          navigate("/login");
         }
       }
     );

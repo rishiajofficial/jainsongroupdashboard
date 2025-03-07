@@ -12,12 +12,24 @@ const Signup = () => {
   useEffect(() => {
     // Check if user is already authenticated
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        navigate("/dashboard");
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Auth check error:", error);
+          setIsLoading(false);
+          return;
+        }
+        
+        if (data.session) {
+          navigate("/dashboard");
+        } else {
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
     
     checkAuth();

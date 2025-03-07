@@ -15,7 +15,15 @@ const DashboardPage = () => {
     // Check if user is authenticated with Supabase
     const checkAuth = async () => {
       try {
-        const { data } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Auth error:", error);
+          toast.error("Authentication error");
+          navigate("/login");
+          setIsLoading(false);
+          return;
+        }
         
         if (!data.session) {
           // Only show toast if we're not on initial load
@@ -23,15 +31,16 @@ const DashboardPage = () => {
             toast.error("Please log in to access the dashboard");
           }
           navigate("/login");
+          setIsLoading(false);
           return;
         }
         
         setIsAuthenticated(true);
+        setIsLoading(false);
       } catch (error) {
         console.error("Auth error:", error);
         toast.error("Authentication error");
         navigate("/login");
-      } finally {
         setIsLoading(false);
       }
     };

@@ -9,6 +9,41 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      answer_options: {
+        Row: {
+          created_at: string
+          id: string
+          is_correct: boolean | null
+          option_text: string
+          order_number: number
+          question_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_correct?: boolean | null
+          option_text: string
+          order_number: number
+          question_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_correct?: boolean | null
+          option_text?: string
+          order_number?: number
+          question_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answer_options_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       applications: {
         Row: {
           candidate_id: string
@@ -53,6 +88,89 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assessment_templates: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      assessments: {
+        Row: {
+          ai_feedback: string | null
+          candidate_id: string
+          completion_time: string | null
+          created_at: string
+          created_by: string
+          id: string
+          overall_score: number | null
+          start_time: string | null
+          status: string
+          strengths: string[] | null
+          template_id: string
+          updated_at: string
+          weaknesses: string[] | null
+        }
+        Insert: {
+          ai_feedback?: string | null
+          candidate_id: string
+          completion_time?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          overall_score?: number | null
+          start_time?: string | null
+          status?: string
+          strengths?: string[] | null
+          template_id: string
+          updated_at?: string
+          weaknesses?: string[] | null
+        }
+        Update: {
+          ai_feedback?: string | null
+          candidate_id?: string
+          completion_time?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          overall_score?: number | null
+          start_time?: string | null
+          status?: string
+          strengths?: string[] | null
+          template_id?: string
+          updated_at?: string
+          weaknesses?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessments_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -178,6 +296,108 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      questions: {
+        Row: {
+          assessment_template_id: string
+          created_at: string
+          evaluation_criteria: Json | null
+          id: string
+          order_number: number
+          question_text: string
+          question_type: string
+          updated_at: string
+        }
+        Insert: {
+          assessment_template_id: string
+          created_at?: string
+          evaluation_criteria?: Json | null
+          id?: string
+          order_number: number
+          question_text: string
+          question_type: string
+          updated_at?: string
+        }
+        Update: {
+          assessment_template_id?: string
+          created_at?: string
+          evaluation_criteria?: Json | null
+          id?: string
+          order_number?: number
+          question_text?: string
+          question_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_assessment_template_id_fkey"
+            columns: ["assessment_template_id"]
+            isOneToOne: false
+            referencedRelation: "assessment_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      responses: {
+        Row: {
+          ai_feedback: string | null
+          assessment_id: string
+          created_at: string
+          id: string
+          question_id: string
+          score: number | null
+          selected_option_id: string | null
+          text_response: string | null
+          updated_at: string
+          video_url: string | null
+        }
+        Insert: {
+          ai_feedback?: string | null
+          assessment_id: string
+          created_at?: string
+          id?: string
+          question_id: string
+          score?: number | null
+          selected_option_id?: string | null
+          text_response?: string | null
+          updated_at?: string
+          video_url?: string | null
+        }
+        Update: {
+          ai_feedback?: string | null
+          assessment_id?: string
+          created_at?: string
+          id?: string
+          question_id?: string
+          score?: number | null
+          selected_option_id?: string | null
+          text_response?: string | null
+          updated_at?: string
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "responses_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "responses_selected_option_id_fkey"
+            columns: ["selected_option_id"]
+            isOneToOne: false
+            referencedRelation: "answer_options"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
