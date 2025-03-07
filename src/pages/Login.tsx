@@ -45,7 +45,7 @@ const Login = () => {
       <Header />
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md animate-fade-up">
-          <AuthForm mode="login" />
+          <AuthForm mode="login" redirectTo="/dashboard" />
         </div>
       </main>
     </div>

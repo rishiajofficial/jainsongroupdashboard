@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/ui/Header";
@@ -11,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sidebar } from "@/components/ui/sidebar";
 
 interface Application {
   id: string;
@@ -55,6 +57,7 @@ const ApplicationsReview = () => {
 
   const checkAuthStatus = async () => {
     try {
+      setIsLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -72,6 +75,7 @@ const ApplicationsReview = () => {
 
       if (profileError) {
         console.error("Error fetching profile:", profileError);
+        toast.error("Error fetching your profile");
         navigate("/dashboard");
         return;
       }
@@ -91,6 +95,8 @@ const ApplicationsReview = () => {
       console.error("Error checking auth status:", error);
       toast.error("An error occurred");
       navigate("/dashboard");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -120,6 +126,7 @@ const ApplicationsReview = () => {
 
   const fetchApplications = async (userId: string, role: string | null) => {
     try {
+      setIsLoading(true);
       let query = supabase
         .from("applications")
         .select(`
@@ -136,6 +143,7 @@ const ApplicationsReview = () => {
 
       // Apply filters
       if (role !== 'admin') {
+        // For managers, get applications to jobs they created
         query = query.eq('jobs.created_by', userId);
       }
       
@@ -155,6 +163,7 @@ const ApplicationsReview = () => {
         return;
       }
 
+      console.log("Applications fetched:", data);
       setApplications(data || []);
     } catch (error) {
       console.error("Error fetching applications:", error);

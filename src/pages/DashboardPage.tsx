@@ -5,6 +5,7 @@ import { Header } from "@/components/ui/Header";
 import { Dashboard } from "@/components/ui/Dashboard";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 const DashboardPage = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -87,9 +88,11 @@ const DashboardPage = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 container py-8">
-        {isAuthenticated && <Dashboard />}
-      </main>
+      <SidebarProvider>
+        <main className="flex-1 flex w-full">
+          {isAuthenticated && <Dashboard />}
+        </main>
+      </SidebarProvider>
     </div>
   );
 };

@@ -27,10 +27,6 @@ export function DesktopNavigation({ isAuthenticated, user, onLogout }: DesktopNa
 
   return (
     <nav className="hidden md:flex items-center gap-6">
-      <Link to="/" className="text-sm font-medium transition-colors hover:text-primary">
-        Home
-      </Link>
-      
       <Link to="/jobs" className="text-sm font-medium transition-colors hover:text-primary">
         Jobs
       </Link>
@@ -40,40 +36,6 @@ export function DesktopNavigation({ isAuthenticated, user, onLogout }: DesktopNa
           <Link to="/dashboard" className="text-sm font-medium transition-colors hover:text-primary">
             Dashboard
           </Link>
-          
-          {/* Role-specific navigation links */}
-          {user?.role === 'candidate' && (
-            <>
-              <Link to="/applications" className="text-sm font-medium transition-colors hover:text-primary">
-                My Applications
-              </Link>
-            </>
-          )}
-          
-          {isManager && (
-            <>
-              <Link to="/jobs/manage" className="text-sm font-medium transition-colors hover:text-primary">
-                Manage Jobs
-              </Link>
-              <Link to="/applications/review" className="text-sm font-medium transition-colors hover:text-primary relative">
-                Review Applications
-                {hasUnread && (
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-2 -right-4 px-1 min-w-5 h-5 flex items-center justify-center rounded-full"
-                  >
-                    {unreadCount}
-                  </Badge>
-                )}
-              </Link>
-            </>
-          )}
-          
-          {user?.role === 'admin' && (
-            <Link to="/admin/approvals" className="text-sm font-medium transition-colors hover:text-primary">
-              Manager Approvals
-            </Link>
-          )}
           
           <UserMenu user={user} onLogout={onLogout} />
         </>
