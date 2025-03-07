@@ -13,7 +13,6 @@ const Login = () => {
     // Check if user is already authenticated
     const checkAuth = async () => {
       try {
-        // Clear any potentially stale auth data in localStorage
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
@@ -27,6 +26,20 @@ const Login = () => {
     };
     
     checkAuth();
+    
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          navigate("/dashboard");
+        }
+      }
+    );
+    
+    // Cleanup subscription on unmount
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   if (isLoading) {

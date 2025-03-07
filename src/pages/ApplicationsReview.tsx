@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/ui/Header";
@@ -120,6 +121,8 @@ const ApplicationsReview = () => {
 
   const fetchApplications = async (userId: string, role: string | null) => {
     try {
+      setIsLoading(true);
+      
       let query = supabase
         .from("applications")
         .select(`
@@ -272,30 +275,29 @@ const ApplicationsReview = () => {
     }
   };
 
-  const handleFilterChange = async () => {
-    setIsLoading(true);
-    
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
+  useEffect(() => {
+    if (hasAccess) {
+      const { data: { session } } = supabase.auth.getSession();
       
       if (!session) return;
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
+      const fetchProfile = async () => {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
 
-      await fetchApplications(session.user.id, profile?.role);
-    } catch (error) {
-      console.error("Error applying filters:", error);
-      toast.error("Failed to apply filters");
-    }
-  };
+          if (profile) {
+            fetchApplications(session.user.id, profile.role);
+          }
+        } catch (error) {
+          console.error("Error applying filters:", error);
+        }
+      };
 
-  useEffect(() => {
-    if (hasAccess) {
-      handleFilterChange();
+      fetchProfile();
     }
   }, [appStatusFilter, jobFilter, hasAccess]);
 
@@ -346,7 +348,12 @@ const ApplicationsReview = () => {
                   <label className="text-sm font-medium mb-1 block">
                     Status
                   </label>
-                  <Select value={appStatusFilter} onValueChange={setAppStatusFilter}>
+                  <Select 
+                    value={appStatusFilter} 
+                    onValueChange={(value) => {
+                      setAppStatusFilter(value);
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
@@ -365,7 +372,9 @@ const ApplicationsReview = () => {
                   </label>
                   <Select 
                     value={jobFilter || ""} 
-                    onValueChange={(value) => setJobFilter(value || null)}
+                    onValueChange={(value) => {
+                      setJobFilter(value || null);
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Filter by job" />

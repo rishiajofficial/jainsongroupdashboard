@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 const DashboardPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,6 +25,19 @@ const DashboardPage = () => {
           }
           navigate("/login");
           return;
+        }
+        
+        // Fetch user profile data
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+          
+        if (error) {
+          console.error("Profile fetch error:", error);
+        } else {
+          setUserProfile(profile);
         }
         
         setIsAuthenticated(true);
@@ -43,8 +57,22 @@ const DashboardPage = () => {
       (event, session) => {
         if (event === 'SIGNED_IN') {
           setIsAuthenticated(true);
+          // Fetch profile on sign in
+          const fetchProfile = async () => {
+            if (session) {
+              const { data } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+              
+              setUserProfile(data);
+            }
+          };
+          fetchProfile();
         } else if (event === 'SIGNED_OUT') {
           setIsAuthenticated(false);
+          setUserProfile(null);
           navigate("/login");
         }
       }
@@ -55,23 +83,6 @@ const DashboardPage = () => {
       subscription.unsubscribe();
     };
   }, [navigate, isLoading]);
-
-  // Force authentication check on page load
-  useEffect(() => {
-    const validateAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          setIsAuthenticated(false);
-        }
-      } catch (error) {
-        console.error("Session validation error:", error);
-        setIsAuthenticated(false);
-      }
-    };
-    
-    validateAuth();
-  }, []);
 
   if (isLoading) {
     return (
@@ -88,7 +99,9 @@ const DashboardPage = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 container py-8">
-        {isAuthenticated && <Dashboard />}
+        {isAuthenticated && userProfile && (
+          <Dashboard userProfile={userProfile} />
+        )}
       </main>
     </div>
   );

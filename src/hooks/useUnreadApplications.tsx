@@ -17,11 +17,31 @@ export function useUnreadApplications() {
           return;
         }
 
-        // Get unread applications (applications with 'pending' status)
-        const { data, error } = await supabase
+        // Get user role from profile
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+
+        // Only count applications for managers
+        if (profile?.role !== 'manager' && profile?.role !== 'admin') {
+          setUnreadCount(0);
+          return;
+        }
+
+        // For admin, get all pending applications
+        // For manager, get pending applications for jobs they created
+        let query = supabase
           .from('applications')
-          .select('*')
+          .select('id, job_id, jobs!inner(created_by)')
           .eq('status', 'pending');
+
+        if (profile.role === 'manager') {
+          query = query.eq('jobs.created_by', session.user.id);
+        }
+
+        const { data, error } = await query;
 
         if (error) {
           console.error("Error fetching unread applications:", error);
