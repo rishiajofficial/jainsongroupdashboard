@@ -73,7 +73,7 @@ const DashboardPage = () => {
       <Header />
       <SidebarProvider>
         <main className="flex-1 flex">
-          {isAuthenticated && <Dashboard />}
+          {isAuthenticated ? <Dashboard /> : null}
         </main>
       </SidebarProvider>
     </div>
