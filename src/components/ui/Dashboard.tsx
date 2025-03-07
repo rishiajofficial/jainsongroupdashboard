@@ -27,7 +27,7 @@ export function Dashboard() {
 
   return (
     <div className="flex flex-1 animate-fade-up">
-      <DashboardSidebar userData={userData} />
+      {userData && <DashboardSidebar userData={userData} />}
       
       <div className="flex-1 p-6 overflow-auto">
         <div className="space-y-8">
@@ -59,10 +59,16 @@ export function Dashboard() {
                 </div>
               ) : (
                 <div>
-                  <p className="text-muted-foreground mb-2">
-                    You are currently logged in as a <span className="font-semibold capitalize">{userData?.role || 'candidate'}</span>.
-                  </p>
-                  {renderDashboardContent()}
+                  {userData ? (
+                    <>
+                      <p className="text-muted-foreground mb-2">
+                        You are currently logged in as a <span className="font-semibold capitalize">{userData.role || 'candidate'}</span>.
+                      </p>
+                      {renderDashboardContent()}
+                    </>
+                  ) : (
+                    <p>Please log in to access your dashboard content.</p>
+                  )}
                 </div>
               )}
             </CardContent>

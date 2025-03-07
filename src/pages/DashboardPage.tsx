@@ -55,24 +55,7 @@ const DashboardPage = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, isLoading]);
-
-  // Force authentication check on page load
-  useEffect(() => {
-    const validateAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          setIsAuthenticated(false);
-        }
-      } catch (error) {
-        console.error("Session validation error:", error);
-        setIsAuthenticated(false);
-      }
-    };
-    
-    validateAuth();
-  }, []);
+  }, [navigate]);
 
   if (isLoading) {
     return (
@@ -89,12 +72,12 @@ const DashboardPage = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <SidebarProvider>
-        <main className="flex-1 flex w-full">
+        <main className="flex-1 flex">
           {isAuthenticated && <Dashboard />}
         </main>
       </SidebarProvider>
     </div>
   );
-};
+}
 
 export default DashboardPage;

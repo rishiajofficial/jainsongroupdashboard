@@ -22,14 +22,12 @@ interface DashboardSidebarProps {
     fullName: string;
     email: string;
     role: UserRole;
-  } | null;
+  };
 }
 
 export function DashboardSidebar({ userData }: DashboardSidebarProps) {
   const { unreadCount } = useUnreadApplications();
   const navigate = useNavigate();
-
-  if (!userData) return null;
 
   return (
     <Sidebar className="border-r">
@@ -106,11 +104,9 @@ export function DashboardSidebar({ userData }: DashboardSidebarProps) {
                     className="w-full justify-start" 
                     onClick={() => navigate("/applications/review")}
                   >
-                    <div className="flex justify-between items-center w-full">
-                      <div className="flex items-center">
-                        <ClipboardList className="mr-2 h-4 w-4" />
-                        Review Applications
-                      </div>
+                    <div className="flex items-center w-full">
+                      <ClipboardList className="mr-2 h-4 w-4" />
+                      <span>Review Applications</span>
                       {unreadCount > 0 && (
                         <Badge variant="destructive" className="ml-2">{unreadCount}</Badge>
                       )}
@@ -143,11 +139,9 @@ export function DashboardSidebar({ userData }: DashboardSidebarProps) {
                     className="w-full justify-start" 
                     onClick={() => navigate("/applications/review")}
                   >
-                    <div className="flex justify-between items-center w-full">
-                      <div className="flex items-center">
-                        <ClipboardList className="mr-2 h-4 w-4" />
-                        Review Applications
-                      </div>
+                    <div className="flex items-center w-full">
+                      <ClipboardList className="mr-2 h-4 w-4" />
+                      <span>Review Applications</span>
                       {unreadCount > 0 && (
                         <Badge variant="destructive" className="ml-2">{unreadCount}</Badge>
                       )}
