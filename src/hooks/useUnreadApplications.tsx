@@ -10,9 +10,11 @@ export function useUnreadApplications() {
     const fetchUnreadApplications = async () => {
       try {
         setLoading(true);
-        const { data: { session } } = await supabase.auth.getSession();
         
-        if (!session) {
+        // Get current session
+        const { data } = await supabase.auth.getSession();
+        
+        if (!data.session) {
           setUnreadCount(0);
           return;
         }
@@ -21,7 +23,7 @@ export function useUnreadApplications() {
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
-          .eq('id', session.user.id)
+          .eq('id', data.session.user.id)
           .single();
 
         // Only count applications for managers
@@ -38,17 +40,17 @@ export function useUnreadApplications() {
           .eq('status', 'pending');
 
         if (profile.role === 'manager') {
-          query = query.eq('jobs.created_by', session.user.id);
+          query = query.eq('jobs.created_by', data.session.user.id);
         }
 
-        const { data, error } = await query;
+        const { data: applications, error } = await query;
 
         if (error) {
           console.error("Error fetching unread applications:", error);
           return;
         }
 
-        setUnreadCount(data?.length || 0);
+        setUnreadCount(applications?.length || 0);
       } catch (error) {
         console.error("Error in unread applications hook:", error);
       } finally {

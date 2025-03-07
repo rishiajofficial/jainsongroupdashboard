@@ -13,9 +13,9 @@ const Login = () => {
     // Check if user is already authenticated
     const checkAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data } = await supabase.auth.getSession();
         
-        if (session) {
+        if (data.session) {
           navigate("/dashboard");
         }
       } catch (error) {

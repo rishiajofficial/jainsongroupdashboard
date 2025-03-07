@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/ui/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,8 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+// Types for our application
 interface Application {
   id: string;
   created_at: string;
@@ -32,81 +32,84 @@ interface Application {
   };
 }
 
+interface Job {
+  id: string;
+  title: string;
+}
+
 const ApplicationsReview = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [appStatusFilter, setAppStatusFilter] = useState<string>("all");
-  const [jobFilter, setJobFilter] = useState<string | null>(null);
-  const [availableJobs, setAvailableJobs] = useState<{id: string, title: string}[]>([]);
-  const [searchParams] = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [jobFilter, setJobFilter] = useState("");
+  const [availableJobs, setAvailableJobs] = useState<Job[]>([]);
   const navigate = useNavigate();
 
+  // Check authentication and user role
   useEffect(() => {
-    checkAuthStatus();
-    
-    // Check if there's a job ID in the URL
-    const jobIdFromUrl = searchParams.get('jobId');
-    if (jobIdFromUrl) {
-      setJobFilter(jobIdFromUrl);
-    }
-  }, [searchParams]);
+    const checkAuth = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        
+        if (!data.session) {
+          toast.error("Please log in to access this page");
+          navigate("/login");
+          return;
+        }
 
-  const checkAuthStatus = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        toast.error("You must be logged in to review applications");
-        navigate("/login");
-        return;
-      }
+        // Check if user is a manager or admin
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.session.user.id)
+          .single();
 
-      // Get user role from profile
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
+        if (error) {
+          console.error("Error fetching profile:", error);
+          navigate("/dashboard");
+          return;
+        }
 
-      if (profileError) {
-        console.error("Error fetching profile:", profileError);
+        // Only managers and admins can access this page
+        const isManagerOrAdmin = profile?.role === 'manager' || profile?.role === 'admin';
+        if (!isManagerOrAdmin) {
+          toast.error("You don't have permission to access this page");
+          navigate("/dashboard");
+          return;
+        }
+
+        setHasAccess(true);
+        
+        // Load jobs and applications
+        await fetchJobs(data.session.user.id, profile?.role);
+        await fetchApplications(data.session.user.id, profile?.role);
+      } catch (error) {
+        console.error("Error checking auth:", error);
         navigate("/dashboard");
-        return;
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      const isManagerOrAdmin = profile?.role === 'manager' || profile?.role === 'admin';
-      
-      if (!isManagerOrAdmin) {
-        toast.error("You don't have permission to access this page");
-        navigate("/dashboard");
-        return;
-      }
+    checkAuth();
+  }, [navigate]);
 
-      setHasAccess(true);
-      await fetchJobs(session.user.id, profile?.role);
-      await fetchApplications(session.user.id, profile?.role);
-    } catch (error) {
-      console.error("Error checking auth status:", error);
-      toast.error("An error occurred");
-      navigate("/dashboard");
-    }
-  };
-
+  // Fetch jobs that user has access to
   const fetchJobs = async (userId: string, role: string | null) => {
     try {
       let query = supabase
         .from("jobs")
         .select("id, title");
 
-      // Admin sees all jobs, manager sees their own
+      // If not admin, only show jobs created by this user
       if (role !== 'admin') {
         query = query.eq('created_by', userId);
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data, error } = await query;
 
       if (error) {
         console.error("Error fetching jobs:", error);
@@ -119,6 +122,7 @@ const ApplicationsReview = () => {
     }
   };
 
+  // Fetch applications with filters
   const fetchApplications = async (userId: string, role: string | null) => {
     try {
       setIsLoading(true);
@@ -137,17 +141,19 @@ const ApplicationsReview = () => {
           candidate:profiles!candidate_id(full_name, email, avatar_url)
         `);
 
-      // Apply filters
+      // Apply role-based filtering - managers see only their jobs
       if (role !== 'admin') {
         query = query.eq('jobs.created_by', userId);
       }
       
+      // Apply job filter if selected
       if (jobFilter) {
         query = query.eq('job_id', jobFilter);
       }
       
-      if (appStatusFilter !== 'all') {
-        query = query.eq('status', appStatusFilter);
+      // Apply status filter if not "all"
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });
@@ -167,6 +173,28 @@ const ApplicationsReview = () => {
     }
   };
 
+  // Re-fetch applications when filters change
+  useEffect(() => {
+    if (hasAccess) {
+      const fetchCurrentUserData = async () => {
+        const { data } = await supabase.auth.getSession();
+        
+        if (!data.session) return;
+
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.session.user.id)
+          .single();
+
+        fetchApplications(data.session.user.id, profile?.role);
+      };
+
+      fetchCurrentUserData();
+    }
+  }, [statusFilter, jobFilter, hasAccess]);
+
+  // Format date to readable string
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -175,6 +203,7 @@ const ApplicationsReview = () => {
     });
   };
 
+  // Get appropriate badge for application status
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
@@ -207,11 +236,13 @@ const ApplicationsReview = () => {
     }
   };
 
+  // Open application details dialog
   const viewApplicationDetails = (application: Application) => {
     setSelectedApplication(application);
     setDialogOpen(true);
   };
 
+  // Handle resume download
   const downloadResume = async (resumeUrl: string | null) => {
     if (!resumeUrl) {
       toast.error("No resume available for download");
@@ -229,7 +260,7 @@ const ApplicationsReview = () => {
         return;
       }
 
-      // Create a download link for the file
+      // Create download link
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
       a.href = url;
@@ -246,6 +277,7 @@ const ApplicationsReview = () => {
     }
   };
 
+  // Update application status (approve/reject)
   const updateApplicationStatus = async (applicationId: string, status: string) => {
     try {
       const { error } = await supabase
@@ -275,32 +307,7 @@ const ApplicationsReview = () => {
     }
   };
 
-  useEffect(() => {
-    if (hasAccess) {
-      const { data: { session } } = supabase.auth.getSession();
-      
-      if (!session) return;
-
-      const fetchProfile = async () => {
-        try {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
-
-          if (profile) {
-            fetchApplications(session.user.id, profile.role);
-          }
-        } catch (error) {
-          console.error("Error applying filters:", error);
-        }
-      };
-
-      fetchProfile();
-    }
-  }, [appStatusFilter, jobFilter, hasAccess]);
-
+  // Access denied view
   if (!hasAccess && !isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -349,10 +356,8 @@ const ApplicationsReview = () => {
                     Status
                   </label>
                   <Select 
-                    value={appStatusFilter} 
-                    onValueChange={(value) => {
-                      setAppStatusFilter(value);
-                    }}
+                    value={statusFilter} 
+                    onValueChange={setStatusFilter}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Filter by status" />
@@ -371,10 +376,8 @@ const ApplicationsReview = () => {
                     Job
                   </label>
                   <Select 
-                    value={jobFilter || ""} 
-                    onValueChange={(value) => {
-                      setJobFilter(value || null);
-                    }}
+                    value={jobFilter} 
+                    onValueChange={setJobFilter}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Filter by job" />
@@ -393,6 +396,7 @@ const ApplicationsReview = () => {
             </CardContent>
           </Card>
 
+          {/* Loading state */}
           {isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
@@ -427,8 +431,8 @@ const ApplicationsReview = () => {
                 <Button 
                   variant="outline" 
                   onClick={() => {
-                    setAppStatusFilter("all");
-                    setJobFilter(null);
+                    setStatusFilter("all");
+                    setJobFilter("");
                   }}
                 >
                   Clear Filters
@@ -436,143 +440,99 @@ const ApplicationsReview = () => {
               </CardContent>
             </Card>
           ) : (
-            <Tabs defaultValue="list" className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="list">List View</TabsTrigger>
-                <TabsTrigger value="grid">Grid View</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="list" className="space-y-4">
-                {applications.map((application) => (
-                  <Card key={application.id}>
-                    <CardHeader>
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <CardTitle className="flex items-center gap-2">
-                            <span>{application.candidate.full_name || application.candidate.email || "Unknown Candidate"}</span>
-                            {getStatusBadge(application.status)}
-                          </CardTitle>
-                          <CardDescription>
-                            Applied for: {application.job.title} · {formatDate(application.created_at)}
-                          </CardDescription>
-                        </div>
+            <div className="space-y-4">
+              {applications.map((application) => (
+                <Card key={application.id}>
+                  <CardHeader>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <span>{application.candidate.full_name || application.candidate.email || "Unknown Candidate"}</span>
+                          {getStatusBadge(application.status)}
+                        </CardTitle>
+                        <CardDescription>
+                          Applied for: {application.job.title} · {formatDate(application.created_at)}
+                        </CardDescription>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap items-center justify-between gap-4">
-                        <div className="text-sm text-muted-foreground line-clamp-2">
-                          {application.cover_letter 
-                            ? application.cover_letter.substring(0, 150) + (application.cover_letter.length > 150 ? '...' : '') 
-                            : "No cover letter provided"}
-                        </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div className="text-sm text-muted-foreground line-clamp-2">
+                        {application.cover_letter 
+                          ? application.cover_letter.substring(0, 150) + (application.cover_letter.length > 150 ? '...' : '') 
+                          : "No cover letter provided"}
                       </div>
-                    </CardContent>
-                    <CardFooter className="flex justify-between flex-wrap gap-2">
-                      <div className="flex flex-wrap gap-2">
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-between flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => viewApplicationDetails(application)}
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
+                        View Details
+                      </Button>
+                      {application.resume_url && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => viewApplicationDetails(application)}
+                          onClick={() => downloadResume(application.resume_url)}
                         >
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
+                          <Download className="mr-2 h-4 w-4" />
+                          Download Resume
                         </Button>
-                        {application.resume_url && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => downloadResume(application.resume_url)}
-                          >
-                            <Download className="mr-2 h-4 w-4" />
-                            Download Resume
-                          </Button>
-                        )}
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-2">
-                        {application.status === 'pending' && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => updateApplicationStatus(application.id, 'rejected')}
-                            >
-                              <XCircle className="mr-2 h-4 w-4" />
-                              Reject
-                            </Button>
-                            <Button
-                              size="sm"
-                              className="bg-green-500 hover:bg-green-600"
-                              onClick={() => updateApplicationStatus(application.id, 'approved')}
-                            >
-                              <CheckCircle className="mr-2 h-4 w-4" />
-                              Approve
-                            </Button>
-                          </>
-                        )}
-                        {application.status === 'rejected' && (
-                          <Button
-                            size="sm"
-                            className="bg-green-500 hover:bg-green-600"
-                            onClick={() => updateApplicationStatus(application.id, 'approved')}
-                          >
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Approve Instead
-                          </Button>
-                        )}
-                        {application.status === 'approved' && (
+                      )}
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      {application.status === 'pending' && (
+                        <>
                           <Button
                             size="sm"
                             variant="destructive"
                             onClick={() => updateApplicationStatus(application.id, 'rejected')}
                           >
                             <XCircle className="mr-2 h-4 w-4" />
-                            Reject Instead
+                            Reject
                           </Button>
-                        )}
-                      </div>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </TabsContent>
-              
-              <TabsContent value="grid">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {applications.map((application) => (
-                    <Card key={application.id} className="flex flex-col h-full">
-                      <CardHeader>
-                        <CardTitle className="line-clamp-1">
-                          {application.candidate.full_name || application.candidate.email || "Unknown Candidate"}
-                        </CardTitle>
-                        <CardDescription className="flex flex-col gap-1">
-                          <span className="line-clamp-1">Applied for: {application.job.title}</span>
-                          <span>{formatDate(application.created_at)}</span>
-                          <div className="mt-1">{getStatusBadge(application.status)}</div>
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="flex-grow">
-                        <div className="text-sm text-muted-foreground line-clamp-4">
-                          {application.cover_letter 
-                            ? application.cover_letter.substring(0, 100) + (application.cover_letter.length > 100 ? '...' : '') 
-                            : "No cover letter provided"}
-                        </div>
-                      </CardContent>
-                      <CardFooter className="pt-2 flex justify-center">
+                          <Button
+                            size="sm"
+                            className="bg-green-500 hover:bg-green-600"
+                            onClick={() => updateApplicationStatus(application.id, 'approved')}
+                          >
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Approve
+                          </Button>
+                        </>
+                      )}
+                      {application.status === 'rejected' && (
                         <Button
-                          variant="outline"
                           size="sm"
-                          onClick={() => viewApplicationDetails(application)}
-                          className="w-full"
+                          className="bg-green-500 hover:bg-green-600"
+                          onClick={() => updateApplicationStatus(application.id, 'approved')}
                         >
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
+                          <CheckCircle className="mr-2 h-4 w-4" />
+                          Approve Instead
                         </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </div>
-              </TabsContent>
-            </Tabs>
+                      )}
+                      {application.status === 'approved' && (
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => updateApplicationStatus(application.id, 'rejected')}
+                        >
+                          <XCircle className="mr-2 h-4 w-4" />
+                          Reject Instead
+                        </Button>
+                      )}
+                    </div>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
           )}
         </div>
       </main>
