@@ -17,6 +17,8 @@ import JobApplicationPage from "./pages/JobApplicationPage";
 import Applications from "./pages/Applications";
 import JobsManage from "./pages/JobsManage";
 import ApplicationsReview from "./pages/ApplicationsReview";
+import CandidateLanding from "./pages/landing/CandidateLanding";
+import EmployerLanding from "./pages/landing/EmployerLanding";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +30,8 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/candidates" element={<CandidateLanding />} />
+          <Route path="/employers" element={<EmployerLanding />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/dashboard" element={<DashboardPage />} />

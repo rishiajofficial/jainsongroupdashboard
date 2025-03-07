@@ -53,6 +53,22 @@ export function MobileMenu({ isAuthenticated, user, isOpen, onClose, onLogout }:
         </Link>
         
         <Link 
+          to="/candidates" 
+          className="block py-2 text-sm font-medium transition-colors hover:text-primary"
+          onClick={onClose}
+        >
+          For Candidates
+        </Link>
+        
+        <Link 
+          to="/employers" 
+          className="block py-2 text-sm font-medium transition-colors hover:text-primary"
+          onClick={onClose}
+        >
+          For Employers
+        </Link>
+        
+        <Link 
           to="/jobs" 
           className="block py-2 text-sm font-medium transition-colors hover:text-primary"
           onClick={onClose}

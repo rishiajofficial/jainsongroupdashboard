@@ -31,6 +31,14 @@ export function DesktopNavigation({ isAuthenticated, user, onLogout }: DesktopNa
         Home
       </Link>
       
+      <Link to="/candidates" className="text-sm font-medium transition-colors hover:text-primary">
+        For Candidates
+      </Link>
+      
+      <Link to="/employers" className="text-sm font-medium transition-colors hover:text-primary">
+        For Employers
+      </Link>
+      
       <Link to="/jobs" className="text-sm font-medium transition-colors hover:text-primary">
         Jobs
       </Link>
