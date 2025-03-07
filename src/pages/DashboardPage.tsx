@@ -41,7 +41,7 @@ const DashboardPage = () => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (event === 'SIGNED_IN') {
           setIsAuthenticated(true);
         } else if (event === 'SIGNED_OUT') {
           setIsAuthenticated(false);
@@ -56,14 +56,12 @@ const DashboardPage = () => {
     };
   }, [navigate, isLoading]);
 
-  // Check for stale logins on page load
+  // Force authentication check on page load
   useEffect(() => {
-    // Force authentication check on page load
     const validateAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
-          // Clear any potentially stale state
           setIsAuthenticated(false);
         }
       } catch (error) {

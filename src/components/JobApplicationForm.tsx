@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +31,39 @@ export function JobApplicationForm({ jobId, jobTitle, onBack }: JobApplicationFo
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('full_name, email, company, position')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error) {
+          console.error("Error fetching profile:", error);
+          return;
+        }
+
+        if (data) {
+          setFullName(data.full_name || "");
+          setEmail(data.email || "");
+          setCurrentCompany(data.company || "");
+        }
+      } catch (error) {
+        console.error("Error loading profile data:", error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
@@ -58,7 +90,6 @@ export function JobApplicationForm({ jobId, jobTitle, onBack }: JobApplicationFo
 
       const userId = session.user.id;
 
-      // Upload resume if provided
       let resumeUrl = null;
       if (resumeFile) {
         const fileExt = resumeFile.name.split('.').pop();
@@ -77,7 +108,6 @@ export function JobApplicationForm({ jobId, jobTitle, onBack }: JobApplicationFo
         resumeUrl = filePath;
       }
 
-      // Prepare cover letter with additional application details
       const formattedCoverLetter = `
 Full Name: ${fullName}
 Email: ${email}
@@ -93,7 +123,6 @@ Cover Letter:
 ${coverLetter}
       `.trim();
 
-      // Create application record
       const { error: applicationError } = await supabase
         .from('applications')
         .insert({
@@ -142,7 +171,6 @@ ${coverLetter}
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-6">
-          {/* Basic Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Personal Information</h3>
             
@@ -180,7 +208,6 @@ ${coverLetter}
             </div>
           </div>
           
-          {/* Professional Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Professional Information</h3>
             
@@ -257,7 +284,6 @@ ${coverLetter}
             </div>
           </div>
           
-          {/* Cover Letter & Resume */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Application Materials</h3>
             

@@ -32,9 +32,14 @@ const JobApplicationPage = () => {
   }, [jobId, navigate]);
 
   const checkAuthStatus = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      toast.error("You must be logged in to apply for jobs");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("You must be logged in to apply for jobs");
+        navigate("/login");
+      }
+    } catch (error) {
+      console.error("Auth check error:", error);
       navigate("/login");
     }
   };
