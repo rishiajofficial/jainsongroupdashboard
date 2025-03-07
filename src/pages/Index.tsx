@@ -2,7 +2,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/ui/Header";
-import { ArrowRight, Target, ChartBar, Award, TrendingUp, LineChart, Briefcase, Star } from "lucide-react";
+import { ArrowRight, Target, ChartBar, Award, TrendingUp, LineChart, Briefcase, Star, DollarSign, Users, Medal, Sparkles, BarChart } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Index = () => {
@@ -50,101 +50,114 @@ const Index = () => {
         </div>
       </section>
       
-      {/* Value Proposition Section */}
+      {/* Two-sided Value Proposition Section */}
       <section className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl font-light mb-4">A New Approach to Sales Career Growth</h2>
+            <h2 className="text-3xl font-light mb-4">A Platform for Both Sides of Sales Success</h2>
             <p className="text-muted-foreground text-lg">
-              Where salespeople and companies build lasting, mutually beneficial relationships
+              Where salespeople grow their careers and companies build high-performing teams
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* For Salespeople */}
-            <Card className="border border-border/40 shadow-sm bg-background">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            {/* For Sales Professionals */}
+            <Card className="border border-border/40 shadow-sm bg-background relative overflow-hidden">
+              <div className="absolute top-0 right-0 h-20 w-20 bg-primary/5 rounded-bl-full"></div>
               <CardHeader className="p-6">
                 <div className="mb-4 text-primary">
-                  <Briefcase className="h-8 w-8" />
+                  <DollarSign className="h-8 w-8" />
                 </div>
-                <CardTitle className="text-xl font-medium">For Salespeople</CardTitle>
+                <CardTitle className="text-2xl font-medium">For Sales Professionals</CardTitle>
+                <CardDescription className="text-base text-muted-foreground mt-2">
+                  Elevate your sales career and maximize your income potential
+                </CardDescription>
               </CardHeader>
               <CardContent className="px-6 pb-6">
-                <CardDescription className="text-base text-muted-foreground">
-                  Join a platform that treats you as a career professional, not just a hire.
-                </CardDescription>
-                <ul className="mt-4 space-y-3">
+                <ul className="mt-4 space-y-4">
                   <li className="flex items-start gap-3">
-                    <Star className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    <span>Showcase your skills with precision-designed assessments</span>
+                    <div className="rounded-full bg-primary/10 p-1.5 mt-0.5">
+                      <Medal className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Earn More, Faster</p>
+                      <p className="text-sm text-muted-foreground">Access high-paying sales roles matched to your specific skills and strengths</p>
+                    </div>
                   </li>
                   <li className="flex items-start gap-3">
-                    <Star className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    <span>Access personalized coaching and skill development</span>
+                    <div className="rounded-full bg-primary/10 p-1.5 mt-0.5">
+                      <TrendingUp className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Clear Growth Path</p>
+                      <p className="text-sm text-muted-foreground">See exactly what skills and performance metrics you need to advance your career</p>
+                    </div>
                   </li>
                   <li className="flex items-start gap-3">
-                    <Star className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    <span>Track your progress and set clear career advancement goals</span>
+                    <div className="rounded-full bg-primary/10 p-1.5 mt-0.5">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Personalized Development</p>
+                      <p className="text-sm text-muted-foreground">Get AI-powered coaching that targets your specific skill gaps to boost your earning potential</p>
+                    </div>
                   </li>
                 </ul>
+                <div className="mt-6">
+                  <Button asChild className="w-full">
+                    <Link to="/signup">Start Earning More</Link>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
             
-            {/* For Companies */}
-            <Card className="border border-border/40 shadow-sm bg-background">
+            {/* For Employers */}
+            <Card className="border border-border/40 shadow-sm bg-background relative overflow-hidden">
+              <div className="absolute top-0 right-0 h-20 w-20 bg-primary/5 rounded-bl-full"></div>
               <CardHeader className="p-6">
                 <div className="mb-4 text-primary">
-                  <LineChart className="h-8 w-8" />
+                  <Users className="h-8 w-8" />
                 </div>
-                <CardTitle className="text-xl font-medium">For Companies</CardTitle>
+                <CardTitle className="text-2xl font-medium">For Employers</CardTitle>
+                <CardDescription className="text-base text-muted-foreground mt-2">
+                  Build a high-performing sales team with lasting retention
+                </CardDescription>
               </CardHeader>
               <CardContent className="px-6 pb-6">
-                <CardDescription className="text-base text-muted-foreground">
-                  Find and retain high-performing sales talent with our comprehensive platform.
-                </CardDescription>
-                <ul className="mt-4 space-y-3">
+                <ul className="mt-4 space-y-4">
                   <li className="flex items-start gap-3">
-                    <Star className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    <span>Match candidates based on verified skills and cultural fit</span>
+                    <div className="rounded-full bg-primary/10 p-1.5 mt-0.5">
+                      <Target className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Precision Hiring</p>
+                      <p className="text-sm text-muted-foreground">Match candidates based on verified skills and performance data, not just resumes</p>
+                    </div>
                   </li>
                   <li className="flex items-start gap-3">
-                    <Star className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    <span>Enable continuous improvement with targeted development</span>
+                    <div className="rounded-full bg-primary/10 p-1.5 mt-0.5">
+                      <BarChart className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Accelerated Performance</p>
+                      <p className="text-sm text-muted-foreground">Drive quota attainment with targeted skill development and performance tracking</p>
+                    </div>
                   </li>
                   <li className="flex items-start gap-3">
-                    <Star className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    <span>Reduce turnover with transparent growth pathways</span>
+                    <div className="rounded-full bg-primary/10 p-1.5 mt-0.5">
+                      <Award className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Long-term Retention</p>
+                      <p className="text-sm text-muted-foreground">Reduce costly turnover with clear growth paths that keep top performers engaged</p>
+                    </div>
                   </li>
                 </ul>
-              </CardContent>
-            </Card>
-            
-            {/* The Approach */}
-            <Card className="border border-border/40 shadow-sm bg-background">
-              <CardHeader className="p-6">
-                <div className="mb-4 text-primary">
-                  <Award className="h-8 w-8" />
+                <div className="mt-6">
+                  <Button asChild className="w-full">
+                    <Link to="/signup">Build Your Team</Link>
+                  </Button>
                 </div>
-                <CardTitle className="text-xl font-medium">Our Approach</CardTitle>
-              </CardHeader>
-              <CardContent className="px-6 pb-6">
-                <CardDescription className="text-base text-muted-foreground">
-                  We focus on creating long-term value for both sales professionals and employers.
-                </CardDescription>
-                <ul className="mt-4 space-y-3">
-                  <li className="flex items-start gap-3">
-                    <Star className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    <span>Skill-based matching instead of resume scanning</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Star className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    <span>Data-driven performance improvement</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Star className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                    <span>Clear career advancement paths with metrics</span>
-                  </li>
-                </ul>
               </CardContent>
             </Card>
           </div>
