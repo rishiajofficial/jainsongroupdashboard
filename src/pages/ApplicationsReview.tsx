@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/ui/Header";
@@ -28,7 +29,7 @@ interface Application {
     full_name: string | null;
     email: string | null;
     avatar_url: string | null;
-  };
+  } | null;
 }
 
 interface Job {
@@ -325,6 +326,12 @@ const ApplicationsReview = () => {
     );
   }
 
+  // Get the candidate name or fallback to a default value
+  const getCandidateName = (candidate: Application['candidate']) => {
+    if (!candidate) return "Unknown Candidate";
+    return candidate.full_name || candidate.email || "Unknown Candidate";
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -382,7 +389,7 @@ const ApplicationsReview = () => {
                       <SelectValue placeholder="Filter by job" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Jobs</SelectItem>
+                      <SelectItem value="">All Jobs</SelectItem>
                       {availableJobs.map(job => (
                         <SelectItem key={job.id} value={job.id}>
                           {job.title}
@@ -446,11 +453,11 @@ const ApplicationsReview = () => {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <CardTitle className="flex items-center gap-2">
-                          <span>{application.candidate.full_name || application.candidate.email || "Unknown Candidate"}</span>
+                          <span>{getCandidateName(application.candidate)}</span>
                           {getStatusBadge(application.status)}
                         </CardTitle>
                         <CardDescription>
-                          Applied for: {application.job.title} · {formatDate(application.created_at)}
+                          Applied for: {application.job?.title || "Unknown Job"} · {formatDate(application.created_at)}
                         </CardDescription>
                       </div>
                     </div>
@@ -559,13 +566,17 @@ const ApplicationsReview = () => {
             <div className="space-y-6">
               <div className="space-y-2">
                 <h3 className="text-lg font-medium">Candidate</h3>
-                <p className="font-semibold">{selectedApplication.candidate.full_name || "No name provided"}</p>
-                <p className="text-muted-foreground">{selectedApplication.candidate.email}</p>
+                <p className="font-semibold">
+                  {selectedApplication.candidate?.full_name || "No name provided"}
+                </p>
+                <p className="text-muted-foreground">
+                  {selectedApplication.candidate?.email || "No email provided"}
+                </p>
               </div>
               
               <div className="space-y-2">
                 <h3 className="text-lg font-medium">Job</h3>
-                <p>{selectedApplication.job.title}</p>
+                <p>{selectedApplication.job?.title || "Unknown Job"}</p>
               </div>
               
               <div className="space-y-2">
