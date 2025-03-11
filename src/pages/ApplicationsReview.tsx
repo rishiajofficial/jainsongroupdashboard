@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/ui/Header";
@@ -383,7 +382,7 @@ const ApplicationsReview = () => {
                       <SelectValue placeholder="Filter by job" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Jobs</SelectItem>
+                      <SelectItem value="all">All Jobs</SelectItem>
                       {availableJobs.map(job => (
                         <SelectItem key={job.id} value={job.id}>
                           {job.title}
