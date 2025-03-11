@@ -1,389 +1,382 @@
 
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/ui/Header";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { 
-  Search, 
-  ArrowLeft, 
-  Loader2, 
-  Plus,
-  Send,
-  CheckCircle,
-  XCircle,
-  RefreshCw
-} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ArrowLeft, Search, UserPlus, Brain, Calendar } from "lucide-react";
 
 const AssignAssessment = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  
-  const [template, setTemplate] = useState(null);
-  const [candidates, setCandidates] = useState([]);
-  const [selectedCandidates, setSelectedCandidates] = useState({});
-  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isAssigning, setIsAssigning] = useState(false);
-  const [existingAssignments, setExistingAssignments] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [candidates, setCandidates] = useState<any[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
 
-  // Fetch template and candidates
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch template details
-        const { data: templateData, error: templateError } = await supabase
-          .from('assessment_templates')
-          .select('*')
-          .eq('id', id)
-          .single();
+    checkUserRole();
+    Promise.all([fetchTemplates(), fetchCandidates()]).finally(() => setIsLoading(false));
+  }, []);
 
-        if (templateError) throw templateError;
-        setTemplate(templateData);
-
-        // Fetch candidates (users with role 'candidate')
-        const { data: candidatesData, error: candidatesError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('role', 'candidate');
-
-        if (candidatesError) throw candidatesError;
-        setCandidates(candidatesData || []);
-
-        // Fetch existing assessment assignments for this template
-        const { data: assignmentsData, error: assignmentsError } = await supabase
-          .from('assessments')
-          .select('candidate_id, status')
-          .eq('template_id', id);
-
-        if (assignmentsError) throw assignmentsError;
-        
-        // Create a map of candidate_id to assignment status
-        const assignmentsMap = {};
-        assignmentsData?.forEach(assignment => {
-          assignmentsMap[assignment.candidate_id] = assignment.status;
-        });
-        setExistingAssignments(assignmentsMap);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        toast.error('Failed to load data');
-      } finally {
-        setIsLoading(false);
+  const checkUserRole = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("You must be logged in to access this page");
+        navigate("/login");
+        return;
       }
-    };
 
-    if (id) {
-      fetchData();
-    }
-  }, [id]);
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
 
-  // Filter candidates based on search query
-  const filteredCandidates = candidates.filter(candidate => 
-    (candidate.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-     candidate.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     candidate.company?.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
-
-  // Toggle candidate selection
-  const toggleCandidate = (candidateId) => {
-    setSelectedCandidates(prev => ({
-      ...prev,
-      [candidateId]: !prev[candidateId]
-    }));
-  };
-
-  // Select all visible candidates
-  const selectAllVisible = () => {
-    const newSelected = { ...selectedCandidates };
-    filteredCandidates.forEach(candidate => {
-      // Don't select candidates who already have an assessment
-      if (!existingAssignments[candidate.id]) {
-        newSelected[candidate.id] = true;
+      if (error) {
+        console.error("Error fetching user profile:", error);
+        toast.error("Failed to verify user permissions");
+        navigate("/dashboard");
+        return;
       }
-    });
-    setSelectedCandidates(newSelected);
-  };
 
-  // Deselect all candidates
-  const deselectAll = () => {
-    setSelectedCandidates({});
-  };
-
-  // Get assignment status label and color
-  const getStatusInfo = (status) => {
-    switch (status) {
-      case 'pending':
-        return { label: 'Pending', color: 'text-yellow-500' };
-      case 'in_progress':
-        return { label: 'In Progress', color: 'text-blue-500' };
-      case 'completed':
-        return { label: 'Completed', color: 'text-green-500' };
-      case 'evaluated':
-        return { label: 'Evaluated', color: 'text-purple-500' };
-      default:
-        return { label: status, color: 'text-gray-500' };
+      if (profile.role !== "manager" && profile.role !== "admin") {
+        toast.error("You don't have permission to access this page");
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      console.error("Error checking user role:", error);
+      toast.error("An error occurred while verifying your permissions");
+      navigate("/dashboard");
     }
   };
 
-  // Assign assessment to selected candidates
-  const assignAssessment = async () => {
-    const selectedIds = Object.keys(selectedCandidates).filter(id => selectedCandidates[id]);
-    
-    if (selectedIds.length === 0) {
-      toast.error("No candidates selected");
+  const fetchTemplates = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const { data, error } = await supabase
+        .from("assessment_templates")
+        .select("id, title, description, created_at")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching templates:", error);
+        toast.error("Failed to load assessment templates");
+        return;
+      }
+
+      setTemplates(data || []);
+    } catch (error) {
+      console.error("Error loading templates:", error);
+      toast.error("An error occurred while loading assessment templates");
+    }
+  };
+
+  const fetchCandidates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, email, role")
+        .eq("role", "candidate")
+        .order("full_name");
+
+      if (error) {
+        console.error("Error fetching candidates:", error);
+        toast.error("Failed to load candidates");
+        return;
+      }
+
+      setCandidates(data || []);
+    } catch (error) {
+      console.error("Error loading candidates:", error);
+      toast.error("An error occurred while loading candidates");
+    }
+  };
+
+  const handleAssignAssessments = async () => {
+    if (!selectedTemplateId) {
+      toast.error("Please select an assessment template");
       return;
     }
 
-    setIsAssigning(true);
+    if (selectedCandidates.length === 0) {
+      toast.error("Please select at least one candidate");
+      return;
+    }
+
     try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) {
-        throw new Error("You must be logged in to assign assessments");
+      setIsSaving(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("You must be logged in");
+        navigate("/login");
+        return;
       }
 
-      // Prepare assessment records for each selected candidate
-      const assessments = selectedIds.map(candidateId => ({
-        template_id: id,
+      const assessments = selectedCandidates.map(candidateId => ({
+        template_id: selectedTemplateId,
         candidate_id: candidateId,
-        status: 'pending',
-        created_by: session.session.user.id
+        created_by: session.user.id,
+        status: "pending"
       }));
 
-      // Insert assessments
-      const { error } = await supabase
-        .from('assessments')
-        .insert(assessments);
+      const { data, error } = await supabase
+        .from("assessments")
+        .insert(assessments)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error assigning assessments:", error);
+        toast.error("Failed to assign assessments");
+        return;
+      }
 
-      // Refresh assignments
-      const { data: updatedAssignments, error: fetchError } = await supabase
-        .from('assessments')
-        .select('candidate_id, status')
-        .eq('template_id', id);
-
-      if (fetchError) throw fetchError;
-        
-      const updatedAssignmentsMap = {};
-      updatedAssignments?.forEach(assignment => {
-        updatedAssignmentsMap[assignment.candidate_id] = assignment.status;
-      });
-      setExistingAssignments(updatedAssignmentsMap);
-
-      // Clear selections
-      setSelectedCandidates({});
-      
-      toast.success(`Assessment assigned to ${selectedIds.length} candidate(s)`);
+      toast.success(`Successfully assigned assessments to ${selectedCandidates.length} candidates`);
+      setSelectedTemplateId("");
+      setSelectedCandidates([]);
     } catch (error) {
-      console.error('Error assigning assessment:', error);
-      toast.error('Failed to assign assessment');
+      console.error("Error assigning assessments:", error);
+      toast.error("An error occurred while assigning assessments");
     } finally {
-      setIsAssigning(false);
+      setIsSaving(false);
     }
   };
-  
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 container py-8 flex items-center justify-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </main>
-      </div>
-    );
-  }
 
-  if (!template) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 container py-8 flex flex-col items-center justify-center">
-          <h1 className="text-2xl font-bold mb-4">Assessment template not found</h1>
-          <Button onClick={() => navigate('/assessment-templates')}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Templates
-          </Button>
-        </main>
-      </div>
+  const toggleCandidateSelection = (candidateId: string) => {
+    setSelectedCandidates(prev => 
+      prev.includes(candidateId)
+        ? prev.filter(id => id !== candidateId)
+        : [...prev, candidateId]
     );
-  }
+  };
 
-  const selectedCount = Object.values(selectedCandidates).filter(Boolean).length;
+  const selectAllCandidates = () => {
+    if (selectedCandidates.length === filteredCandidates.length) {
+      setSelectedCandidates([]);
+    } else {
+      setSelectedCandidates(filteredCandidates.map(c => c.id));
+    }
+  };
+
+  const filteredCandidates = candidates.filter(candidate => 
+    candidate.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    candidate.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 container py-8">
-        <div className="mb-6 flex items-center">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/assessment-templates')}
-            className="mr-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" /> Back
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Assign Assessment</h1>
-            <p className="text-muted-foreground">{template.title}</p>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => navigate("/dashboard")}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <h1 className="text-2xl font-bold tracking-tight">
+                Assign Assessment
+              </h1>
+            </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Template Info */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle>Assessment Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="font-medium">Title</h3>
-                <p>{template.title}</p>
-              </div>
-              {template.description && (
-                <div>
-                  <h3 className="font-medium">Description</h3>
-                  <p className="text-sm">{template.description}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          
-          {/* Right Column - Candidate Selection */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Select Candidates</CardTitle>
-              <CardDescription>
-                Assign this assessment to one or more candidates
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    placeholder="Search candidates..."
-                    className="pl-10"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={selectAllVisible}
-                    className="whitespace-nowrap"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" /> Select All
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={deselectAll}
-                    className="whitespace-nowrap"
-                  >
-                    <XCircle className="h-4 w-4 mr-2" /> Clear
-                  </Button>
-                </div>
-              </div>
-              
-              {filteredCandidates.length > 0 ? (
-                <div className="border rounded-md divide-y">
-                  {filteredCandidates.map((candidate) => {
-                    const existingStatus = existingAssignments[candidate.id];
-                    const { label: statusLabel, color: statusColor } = 
-                      existingStatus ? getStatusInfo(existingStatus) : { label: '', color: '' };
-                    
-                    return (
-                      <div 
-                        key={candidate.id} 
-                        className={`flex items-center justify-between p-3 ${
-                          existingStatus ? 'bg-gray-50' : ''
-                        }`}
+          {isLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-12 w-full max-w-md" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-[500px] w-full" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="h-5 w-5" />
+                    Assessment Template
+                  </CardTitle>
+                  <CardDescription>
+                    Select the assessment template to assign to candidates
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {templates.length === 0 ? (
+                    <div className="text-center p-4 border rounded-md bg-muted/20">
+                      <p className="text-muted-foreground">No assessment templates available</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-2"
+                        onClick={() => navigate("/assessments/templates/new")}
                       >
-                        <div className="flex items-center gap-3">
-                          {!existingStatus && (
-                            <Checkbox
-                              checked={!!selectedCandidates[candidate.id]}
-                              onCheckedChange={() => toggleCandidate(candidate.id)}
-                              id={`candidate-${candidate.id}`}
-                            />
-                          )}
-                          <div className="flex flex-col">
-                            <Label
-                              htmlFor={`candidate-${candidate.id}`}
-                              className="font-medium cursor-pointer"
-                            >
-                              {candidate.full_name || "Unnamed"}
-                            </Label>
-                            <span className="text-sm text-muted-foreground">
-                              {candidate.email}
-                            </span>
-                            {candidate.company && (
-                              <span className="text-xs text-muted-foreground">
-                                {candidate.company}
-                              </span>
-                            )}
-                          </div>
+                        Create Template
+                      </Button>
+                    </div>
+                  ) : (
+                    <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a template" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {templates.map(template => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  
+                  {selectedTemplateId && (
+                    <div className="mt-4 p-3 border rounded-md bg-muted/20">
+                      <h3 className="font-medium">
+                        {templates.find(t => t.id === selectedTemplateId)?.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {templates.find(t => t.id === selectedTemplateId)?.description || "No description"}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <UserPlus className="h-5 w-5" />
+                    Select Candidates
+                  </CardTitle>
+                  <CardDescription>
+                    Choose the candidates to assign this assessment to
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Search className="h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search candidates..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="flex-1"
+                    />
+                  </div>
+                  
+                  {candidates.length === 0 ? (
+                    <div className="text-center p-4 border rounded-md bg-muted/20">
+                      <p className="text-muted-foreground">No candidates available</p>
+                    </div>
+                  ) : (
+                    <div className="border rounded-md overflow-hidden">
+                      <div className="flex items-center p-3 bg-muted/30 border-b">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="select-all" 
+                            checked={
+                              filteredCandidates.length > 0 && 
+                              selectedCandidates.length === filteredCandidates.length
+                            }
+                            onCheckedChange={selectAllCandidates}
+                          />
+                          <label 
+                            htmlFor="select-all" 
+                            className="text-sm font-medium cursor-pointer"
+                          >
+                            Select All
+                          </label>
                         </div>
-                        
-                        {existingStatus && (
-                          <span className={`text-sm font-medium ${statusColor}`}>
-                            {statusLabel}
-                          </span>
+                        <div className="ml-auto text-sm text-muted-foreground">
+                          {selectedCandidates.length} selected
+                        </div>
+                      </div>
+                      
+                      <div className="max-h-[300px] overflow-y-auto">
+                        {filteredCandidates.length === 0 ? (
+                          <div className="p-4 text-center text-muted-foreground">
+                            No candidates match your search
+                          </div>
+                        ) : (
+                          filteredCandidates.map((candidate) => (
+                            <div 
+                              key={candidate.id} 
+                              className="flex items-center p-3 hover:bg-muted/20 border-b last:border-b-0"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id={`candidate-${candidate.id}`} 
+                                  checked={selectedCandidates.includes(candidate.id)}
+                                  onCheckedChange={() => toggleCandidateSelection(candidate.id)}
+                                />
+                                <label 
+                                  htmlFor={`candidate-${candidate.id}`} 
+                                  className="cursor-pointer"
+                                >
+                                  <div>{candidate.full_name}</div>
+                                  <div className="text-sm text-muted-foreground">{candidate.email}</div>
+                                </label>
+                              </div>
+                            </div>
+                          ))
                         )}
                       </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-12 border rounded-md">
-                  <p className="text-muted-foreground">No candidates found</p>
-                  {searchQuery && (
-                    <Button 
-                      variant="link" 
-                      onClick={() => setSearchQuery("")}
-                      className="mt-2"
-                    >
-                      <RefreshCw className="h-4 w-4 mr-2" /> Clear search
-                    </Button>
+                    </div>
                   )}
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <div>
-                {selectedCount > 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    {selectedCount} candidate(s) selected
-                  </p>
-                )}
+                </CardContent>
+              </Card>
+
+              <div className="lg:col-span-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      Assignment Summary
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="p-4 border rounded-md bg-muted/10">
+                        <div className="text-sm text-muted-foreground">Template</div>
+                        <div className="font-medium mt-1">
+                          {selectedTemplateId 
+                            ? templates.find(t => t.id === selectedTemplateId)?.title 
+                            : "No template selected"}
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 border rounded-md bg-muted/10">
+                        <div className="text-sm text-muted-foreground">Candidates</div>
+                        <div className="font-medium mt-1">
+                          {selectedCandidates.length} selected
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-end">
+                    <Button 
+                      onClick={handleAssignAssessments}
+                      disabled={isSaving || !selectedTemplateId || selectedCandidates.length === 0}
+                      className="px-8"
+                    >
+                      {isSaving ? "Assigning..." : "Assign Assessment"}
+                    </Button>
+                  </CardFooter>
+                </Card>
               </div>
-              <Button 
-                onClick={assignAssessment}
-                disabled={selectedCount === 0 || isAssigning}
-              >
-                {isAssigning ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="mr-2 h-4 w-4" />
-                )}
-                Assign Assessment
-              </Button>
-            </CardFooter>
-          </Card>
+            </div>
+          )}
         </div>
       </main>
     </div>

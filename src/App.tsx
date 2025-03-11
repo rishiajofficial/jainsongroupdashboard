@@ -19,6 +19,10 @@ import JobsManage from "./pages/JobsManage";
 import ApplicationsReview from "./pages/ApplicationsReview";
 import CandidateLanding from "./pages/landing/CandidateLanding";
 import EmployerLanding from "./pages/landing/EmployerLanding";
+import AssessmentTemplates from "./pages/AssessmentTemplates";
+import EditAssessmentTemplate from "./pages/EditAssessmentTemplate";
+import AssignAssessment from "./pages/AssignAssessment";
+import CandidateAssessments from "./pages/CandidateAssessments";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +52,13 @@ const App = () => (
           {/* Applications routes */}
           <Route path="/applications" element={<Applications />} />
           <Route path="/applications/review" element={<ApplicationsReview />} />
+          
+          {/* Assessment routes */}
+          <Route path="/assessments/templates" element={<AssessmentTemplates />} />
+          <Route path="/assessments/templates/:templateId" element={<EditAssessmentTemplate />} />
+          <Route path="/assessments/templates/new" element={<EditAssessmentTemplate />} />
+          <Route path="/assessments/assign" element={<AssignAssessment />} />
+          <Route path="/assessments/candidate" element={<CandidateAssessments />} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
