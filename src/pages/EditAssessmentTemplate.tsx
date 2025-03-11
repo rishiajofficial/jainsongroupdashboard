@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Header } from "@/components/ui/Header";
@@ -13,18 +12,41 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Plus, Trash2, GripVertical, FileText, RadioButton, Video } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, GripVertical, FileText, Video, CheckCircle } from "lucide-react";
+
+interface Option {
+  id?: string;
+  option_text: string;
+  is_correct: boolean;
+  order_number: number;
+}
+
+interface Question {
+  id: string;
+  question_text: string;
+  question_type: string;
+  order_number: number;
+  evaluation_criteria?: any;
+  options: Option[];
+}
+
+interface Template {
+  id: string;
+  title: string;
+  description: string;
+}
 
 const EditAssessmentTemplate = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [template, setTemplate] = useState({
+  const [template, setTemplate] = useState<Template>({
     id: "",
     title: "",
     description: ""
   });
-  const [questions, setQuestions] = useState<any[]>([]);
-  const [newQuestion, setNewQuestion] = useState({
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [newQuestion, setNewQuestion] = useState<Question>({
+    id: "",
     question_text: "",
     question_type: "multiple_choice", // Default type
     order_number: 0,
@@ -144,9 +166,14 @@ const EditAssessmentTemplate = () => {
         return;
       }
 
+      // Initialize questions with empty options arrays
+      const questionsWithOptions = questionsData.map(q => ({
+        ...q,
+        options: []
+      }));
+
       // Fetch answer options for multiple choice questions
-      const multipleChoiceQuestions = questionsData.filter(q => q.question_type === "multiple_choice");
-      const questionsWithOptions = [...questionsData];
+      const multipleChoiceQuestions = questionsWithOptions.filter(q => q.question_type === "multiple_choice");
       
       if (multipleChoiceQuestions.length > 0) {
         for (const mcQuestion of multipleChoiceQuestions) {
@@ -167,13 +194,6 @@ const EditAssessmentTemplate = () => {
           }
         }
       }
-
-      // Add empty options array for non-multiple choice questions
-      questionsWithOptions.forEach(q => {
-        if (!q.options) {
-          q.options = [];
-        }
-      });
 
       setQuestions(questionsWithOptions);
     } catch (error) {
@@ -350,6 +370,7 @@ const EditAssessmentTemplate = () => {
 
     // Reset new question form
     setNewQuestion({
+      id: "",
       question_text: "",
       question_type: "multiple_choice",
       order_number: 0,
@@ -432,7 +453,7 @@ const EditAssessmentTemplate = () => {
   const getQuestionTypeIcon = (type: string) => {
     switch (type) {
       case "multiple_choice":
-        return <RadioButton className="h-4 w-4" />;
+        return <CheckCircle className="h-4 w-4" />;
       case "text":
         return <FileText className="h-4 w-4" />;
       case "video":
