@@ -1,10 +1,10 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Briefcase, ClipboardList } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ManagerDashboard } from "@/components/dashboards/ManagerDashboard";
+import { CandidateDashboard } from "@/components/dashboards/CandidateDashboard";
+import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
 
 type UserRole = 'candidate' | 'manager' | 'admin';
 
@@ -17,7 +17,6 @@ interface ProfileData {
 export function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState<ProfileData | null>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     // Load user data from Supabase
@@ -63,149 +62,14 @@ export function Dashboard() {
 
     switch (userData.role) {
       case 'admin':
-        return (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <User className="mr-2 h-5 w-5" />
-                  Admin Dashboard
-                </CardTitle>
-                <CardDescription>
-                  Manage system settings
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <Button 
-                    onClick={() => navigate("/admin/approvals")} 
-                    className="w-full sm:w-auto"
-                  >
-                    View Manager Approval Requests
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Briefcase className="mr-2 h-5 w-5" />
-                  Job Listings
-                </CardTitle>
-                <CardDescription>
-                  View and manage all job listings
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button 
-                  onClick={() => navigate("/jobs")} 
-                  className="w-full sm:w-auto"
-                >
-                  View All Jobs
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        );
+        return <AdminDashboard userData={userData} />;
         
       case 'manager':
-        return (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Briefcase className="mr-2 h-5 w-5" />
-                  Manage Job Listings
-                </CardTitle>
-                <CardDescription>
-                  Create and manage job postings
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button 
-                  onClick={() => navigate("/jobs/create")} 
-                  className="w-full sm:w-auto"
-                >
-                  Create New Job Listing
-                </Button>
-                <Button 
-                  onClick={() => navigate("/jobs/manage")} 
-                  variant="outline" 
-                  className="w-full sm:w-auto"
-                >
-                  Manage My Job Listings
-                </Button>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <ClipboardList className="mr-2 h-5 w-5" />
-                  Applications
-                </CardTitle>
-                <CardDescription>
-                  Review candidate applications
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button 
-                  onClick={() => navigate("/applications/review")} 
-                  className="w-full sm:w-auto"
-                >
-                  Review Applications
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        );
+        return <ManagerDashboard userData={userData} />;
         
       case 'candidate':
       default:
-        return (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Briefcase className="mr-2 h-5 w-5" />
-                  Job Opportunities
-                </CardTitle>
-                <CardDescription>
-                  Browse available job listings
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button 
-                  onClick={() => navigate("/jobs")} 
-                  className="w-full sm:w-auto"
-                >
-                  Browse Available Jobs
-                </Button>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <ClipboardList className="mr-2 h-5 w-5" />
-                  My Applications
-                </CardTitle>
-                <CardDescription>
-                  Track your job applications
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button 
-                  onClick={() => navigate("/applications")} 
-                  className="w-full sm:w-auto"
-                >
-                  View My Applications
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        );
+        return <CandidateDashboard userData={userData} />;
     }
   };
 
@@ -239,7 +103,7 @@ export function Dashboard() {
             </div>
           ) : (
             <div>
-              <p className="text-muted-foreground mb-2">
+              <p className="text-muted-foreground mb-4">
                 You are currently logged in as a <span className="font-semibold capitalize">{userData?.role || 'candidate'}</span>.
               </p>
               {renderRoleBasedContent()}

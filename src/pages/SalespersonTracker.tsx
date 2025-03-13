@@ -1,13 +1,32 @@
-
 import { useState, useEffect, useRef } from "react";
-import { Sidebar } from "@/components/ui/sidebar";
+import { useNavigate } from "react-router-dom";
+import { MobileLayout } from "@/components/layouts/MobileLayout";
 import { Header } from "@/components/ui/header";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mic, MapPin, CheckCircle, X, Loader2 } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Mic, 
+  MapPin, 
+  Loader2, 
+  CheckCircle, 
+  AlertCircle, 
+  StopCircle,
+  Save
+} from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Geolocation } from '@capacitor/geolocation';
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Json } from "@/integrations/supabase/types";
 
 // Type that matches what's coming from Supabase
@@ -62,466 +81,488 @@ const convertSupabaseVisit = (visit: SupabaseShopVisit): ShopVisit => {
   };
 };
 
-const SalespersonTracker = () => {
-  const [isRecording, setIsRecording] = useState(false);
-  const [currentVisit, setCurrentVisit] = useState<Partial<ShopVisit> | null>(null);
+export default function SalespersonTracker() {
+  const [location, setLocation] = useState<{ latitude: number; longitude: number; address?: string } | null>(null);
   const [shopName, setShopName] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [todayVisits, setTodayVisits] = useState<ShopVisit[]>([]);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const { toast } = useToast();
+  const [notes, setNotes] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioURL, setAudioURL] = useState<string | null>(null);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
-  // Fetch today's visits on component mount
   useEffect(() => {
-    fetchTodayVisits();
+    // Get geolocation on component mount
+    handleGeolocation();
+
+    // Clean up media recorder on unmount
+    return () => {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+      }
+    };
   }, []);
 
-  const fetchTodayVisits = async () => {
-    try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) return;
+  const handleGeolocation = () => {
+    setLocationLoading(true);
+    setLocationError(null);
 
-      const today = new Date();
-      const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
-      const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString();
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          setLocation({ latitude, longitude });
 
-      const { data, error } = await supabase
-        .from('shop_visits')
-        .select('*')
-        .eq('salesperson_id', session.session.user.id)
-        .gte('created_at', startOfDay)
-        .lte('created_at', endOfDay)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      // Convert the data to our application's format
-      const convertedData = data ? data.map(item => convertSupabaseVisit(item as SupabaseShopVisit)) : [];
-      setTodayVisits(convertedData);
-    } catch (error) {
-      console.error('Error fetching visits:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load today's visits",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const startVisit = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Check if user is authenticated
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) {
-        toast({
-          title: "Authentication required",
-          description: "Please log in to track visits",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Get current position
-      const position = await Geolocation.getCurrentPosition({ 
-        enableHighAccuracy: true 
-      });
-
-      // Create a new visit record
-      const newVisit = {
-        salesperson_id: session.session.user.id,
-        location: {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
+          // Reverse geocode to get address
+          try {
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
+            );
+            const data = await response.json();
+            setLocation(prev => ({ 
+              ...prev,
+              address: data.display_name
+            }));
+          } catch (error) {
+            console.error("Error reverse geocoding:", error);
+            setLocationError("Error getting address");
+          } finally {
+            setLocationLoading(false);
+          }
         },
-        status: 'pending' as const,
-        shop_name: shopName || 'Unnamed Shop',
-        created_at: new Date().toISOString(),
-      };
-
-      const { data, error } = await supabase
-        .from('shop_visits')
-        .insert([newVisit])
-        .select();
-
-      if (error) throw error;
-
-      // Convert the data to our application's format
-      if (data && data.length > 0) {
-        const convertedVisit = convertSupabaseVisit(data[0] as SupabaseShopVisit);
-        setCurrentVisit(convertedVisit);
-        toast({
-          title: "Visit started",
-          description: "Your location has been recorded",
-        });
-      }
-    } catch (error) {
-      console.error('Error starting visit:', error);
-      toast({
-        title: "Error",
-        description: "Failed to start visit. Please check location permissions",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+        (error) => {
+          console.error("Geolocation error:", error);
+          setLocationError("Error getting location");
+          setLocationLoading(false);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 1000,
+        }
+      );
+    } else {
+      setLocationError("Geolocation is not supported");
+      setLocationLoading(false);
     }
   };
 
   const startRecording = async () => {
     try {
-      if (!currentVisit) {
-        toast({
-          title: "No active visit",
-          description: "Please start a visit first",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
-      audioChunksRef.current = [];
+      const recorder = new MediaRecorder(stream);
+      setMediaRecorder(recorder);
 
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
+      const chunks: Blob[] = [];
+      recorder.ondataavailable = (event) => {
+        chunks.push(event.data);
+      };
+
+      recorder.onstop = () => {
+        const audioBlob = new Blob(chunks, { type: "audio/webm" });
+        const url = URL.createObjectURL(audioBlob);
+        setAudioURL(url);
+        setIsRecording(false);
+        if (audioRef.current) {
+          audioRef.current.src = url;
         }
       };
 
-      mediaRecorderRef.current.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        setAudioBlob(audioBlob);
-        audioChunksRef.current = [];
-      };
-
-      mediaRecorderRef.current.start();
+      recorder.start();
       setIsRecording(true);
     } catch (error) {
-      console.error('Error starting recording:', error);
+      console.error("Error starting recording:", error);
       toast({
-        title: "Recording error",
-        description: "Could not access microphone",
+        title: "Recording failed",
+        description: "Please allow microphone access",
         variant: "destructive",
       });
     }
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      
-      // Stop all audio tracks
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      
-      toast({
-        title: "Recording completed",
-        description: "Your pitch has been recorded",
-      });
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      mediaRecorder.stop();
     }
   };
 
-  const completeVisit = async () => {
-    if (!currentVisit || !currentVisit.id) return;
-    
-    setIsLoading(true);
-    
+  const saveShopVisit = async () => {
+    setIsSubmitting(true);
     try {
-      // If there's an audio recording, upload it
-      let audioUrl = null;
-      
-      if (audioBlob) {
-        const fileName = `visit_${currentVisit.id}_${Date.now()}.webm`;
-        const { error: uploadError, data } = await supabase.storage
-          .from('salesperson_recordings')
-          .upload(fileName, audioBlob);
-          
-        if (uploadError) throw uploadError;
-        
-        const { data: { publicUrl } } = supabase.storage
-          .from('salesperson_recordings')
-          .getPublicUrl(fileName);
-          
-        audioUrl = publicUrl;
+      if (!location) {
+        toast({
+          title: "Location required",
+          description: "Please enable location services",
+          variant: "destructive",
+        });
+        return;
       }
-      
-      // Update the visit record
-      const { error } = await supabase
+
+      if (!shopName) {
+        toast({
+          title: "Shop name required",
+          description: "Please enter the shop name",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      let audio_url = null;
+      if (audioURL) {
+        // Convert audioURL (blob URL) to a File object
+        const response = await fetch(audioURL);
+        const blob = await response.blob();
+        const audioFile = new File([blob], "sales_pitch.webm", { type: "audio/webm" });
+
+        // Upload audio to Supabase storage
+        const { data, error } = await supabase.storage
+          .from('shop_visit_recordings')
+          .upload(`audio/${Date.now()}_${audioFile.name}`, audioFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (error) throw error;
+        audio_url = supabase.storage.from('shop_visit_recordings').getPublicUrl(data.path).data.publicUrl;
+      }
+
+      // Save shop visit data to Supabase
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to save the shop visit",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { error: insertError } = await supabase
         .from('shop_visits')
-        .update({ 
-          status: 'completed',
-          audio_url: audioUrl
-        })
-        .eq('id', currentVisit.id);
-        
-      if (error) throw error;
-      
+        .insert([
+          {
+            location: location,
+            shop_name: shopName,
+            notes: notes,
+            audio_url: audio_url,
+            salesperson_id: sessionData.session.user.id,
+            status: 'completed'
+          }
+        ]);
+
+      if (insertError) throw insertError;
+
       toast({
-        title: "Visit completed",
-        description: "Your visit has been recorded successfully",
+        title: "Shop visit saved",
+        description: "Your shop visit has been saved successfully",
       });
-      
-      // Reset the state
-      setCurrentVisit(null);
-      setAudioBlob(null);
-      setShopName("");
-      
-      // Refresh the list
-      fetchTodayVisits();
-      
+      navigate("/dashboard");
     } catch (error) {
-      console.error('Error completing visit:', error);
+      console.error("Error saving shop visit:", error);
       toast({
-        title: "Error",
-        description: "Failed to complete visit",
+        title: "Save failed",
+        description: "Could not save shop visit",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  const cancelVisit = async () => {
-    if (!currentVisit || !currentVisit.id) return;
-    
-    try {
-      // Update the visit status to failed
-      const { error } = await supabase
-        .from('shop_visits')
-        .update({ status: 'failed' })
-        .eq('id', currentVisit.id);
+  return isMobile ? (
+    <MobileLayout title="Track Shop Visit" backLink="/dashboard">
+      <div className="space-y-6">
+        {/* Location Card */}
+        <Card className="animate-fade-up">
+          <CardHeader>
+            <CardTitle>Current Location</CardTitle>
+            <CardDescription>
+              {locationLoading && "Detecting location..."}
+              {locationError && <AlertCircle className="mr-2 h-4 w-4 inline" />}
+              {locationError && locationError}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {location ? (
+              <div className="space-y-1">
+                <p className="text-sm">
+                  <strong>Latitude:</strong> {location.latitude.toFixed(6)}
+                </p>
+                <p className="text-sm">
+                  <strong>Longitude:</strong> {location.longitude.toFixed(6)}
+                </p>
+                {location.address && (
+                  <p className="text-sm">
+                    <strong>Address:</strong> {location.address}
+                  </p>
+                )}
+                <Badge variant="secondary">
+                  <MapPin className="mr-2 h-4 w-4" /> Detected
+                </Badge>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                disabled={locationLoading}
+                onClick={handleGeolocation}
+              >
+                {locationLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Detect Location
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="mr-2 h-4 w-4" />
+                    Detect Location
+                  </>
+                )}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
         
-      if (error) throw error;
-      
-      // Reset the state
-      setCurrentVisit(null);
-      setAudioBlob(null);
-      setShopName("");
-      
-      // Stop recording if active
-      if (isRecording && mediaRecorderRef.current) {
-        mediaRecorderRef.current.stop();
-        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-        setIsRecording(false);
-      }
-      
-      toast({
-        title: "Visit cancelled",
-        description: "Your visit has been cancelled",
-      });
-      
-      // Refresh the list
-      fetchTodayVisits();
-    } catch (error) {
-      console.error('Error cancelling visit:', error);
-      toast({
-        title: "Error",
-        description: "Failed to cancel visit",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-
-  return (
+        {/* Shop Information Card */}
+        <Card className="animate-fade-up">
+          <CardHeader>
+            <CardTitle>Shop Information</CardTitle>
+            <CardDescription>Enter details about the shop you are visiting</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="shop-name">Shop Name</Label>
+              <Input
+                id="shop-name"
+                placeholder="Enter shop name"
+                value={shopName}
+                onChange={(e) => setShopName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                placeholder="Enter any notes about the visit"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Audio Recording Card */}
+        <Card className="animate-fade-up">
+          <CardHeader>
+            <CardTitle>Sales Pitch Recording</CardTitle>
+            <CardDescription>Record your sales pitch for quality assurance</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {audioURL ? (
+                <div className="flex flex-col items-center space-y-2">
+                  <audio controls src={audioURL} ref={audioRef} className="w-full" />
+                  <Badge variant="outline">
+                    <CheckCircle className="mr-2 h-4 w-4" /> Recording saved
+                  </Badge>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={isRecording ? stopRecording : startRecording}
+                  disabled={locationError !== null}
+                >
+                  {isRecording ? (
+                    <>
+                      <StopCircle className="mr-2 h-4 w-4 animate-pulse" />
+                      Stop Recording
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="mr-2 h-4 w-4" />
+                      Start Recording
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Submit Button */}
+        <Button 
+          className="w-full mt-4" 
+          size="lg"
+          onClick={saveShopVisit}
+          disabled={isSubmitting || !shopName || !location}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="mr-2 h-4 w-4" />
+              Save Shop Visit
+            </>
+          )}
+        </Button>
+      </div>
+    </MobileLayout>
+  ) : (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <div className="flex-1 flex">
-        <Sidebar />
-        <main className="flex-1 p-6">
-          <div className="max-w-4xl mx-auto space-y-8">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Salesperson Tracker</h1>
-              <p className="text-muted-foreground">Record your shop visits and sales pitches</p>
-            </div>
-
-            {/* Active Visit Card */}
-            <Card className={currentVisit ? "border-primary" : ""}>
+      <main className="flex-1 container py-8">
+        <div className="max-w-2xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold">Track Shop Visit</h1>
+            <p className="text-muted-foreground">Record your shop visits and sales pitches</p>
+          </div>
+          
+          <div className="space-y-6">
+            {/* Location Card */}
+            <Card>
               <CardHeader>
-                <CardTitle>New Shop Visit</CardTitle>
+                <CardTitle>Current Location</CardTitle>
                 <CardDescription>
-                  {currentVisit 
-                    ? "Visit in progress - record your sales pitch" 
-                    : "Start a new shop visit by entering the shop name and clicking 'Start Visit'"}
+                  {locationLoading && "Detecting location..."}
+                  {locationError && <AlertCircle className="mr-2 h-4 w-4 inline" />}
+                  {locationError && locationError}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {!currentVisit ? (
-                    <div className="space-y-4">
-                      <div className="grid w-full items-center gap-1.5">
-                        <label htmlFor="shop-name" className="text-sm font-medium">
-                          Shop Name
-                        </label>
-                        <input
-                          id="shop-name"
-                          className="w-full px-3 py-2 border rounded-md"
-                          placeholder="Enter shop name"
-                          value={shopName}
-                          onChange={(e) => setShopName(e.target.value)}
-                          disabled={!!currentVisit || isLoading}
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="h-4 w-4 text-primary" />
-                        <span>
-                          Location recorded for {currentVisit.shop_name}
-                        </span>
-                      </div>
-                      
-                      <div className="mt-6">
-                        <h3 className="font-medium text-sm mb-2">Sales Pitch Recording</h3>
-                        <div className="flex items-center gap-3">
-                          <Button
-                            variant={isRecording ? "destructive" : "default"}
-                            onClick={isRecording ? stopRecording : startRecording}
-                            disabled={isLoading}
-                            className="flex items-center gap-2"
-                          >
-                            <Mic className="h-4 w-4" />
-                            {isRecording ? "Stop Recording" : audioBlob ? "Record Again" : "Record Pitch"}
-                          </Button>
-                          
-                          {audioBlob && (
-                            <div className="text-sm text-primary font-medium flex items-center gap-1">
-                              <CheckCircle className="h-4 w-4" />
-                              Recording saved
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                {!currentVisit ? (
-                  <Button 
-                    onClick={startVisit} 
-                    disabled={isLoading}
-                    className="w-full"
+                {location ? (
+                  <div className="space-y-1">
+                    <p className="text-sm">
+                      <strong>Latitude:</strong> {location.latitude.toFixed(6)}
+                    </p>
+                    <p className="text-sm">
+                      <strong>Longitude:</strong> {location.longitude.toFixed(6)}
+                    </p>
+                    {location.address && (
+                      <p className="text-sm">
+                        <strong>Address:</strong> {location.address}
+                      </p>
+                    )}
+                    <Badge variant="secondary">
+                      <MapPin className="mr-2 h-4 w-4" /> Detected
+                    </Badge>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    disabled={locationLoading}
+                    onClick={handleGeolocation}
                   >
-                    {isLoading ? (
+                    {locationLoading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
+                        Detect Location
                       </>
                     ) : (
                       <>
                         <MapPin className="mr-2 h-4 w-4" />
-                        Start Visit
+                        Detect Location
                       </>
                     )}
                   </Button>
-                ) : (
-                  <div className="flex w-full gap-3">
-                    <Button 
-                      variant="outline" 
-                      onClick={cancelVisit}
-                      disabled={isLoading}
-                      className="flex-1"
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* Shop Information Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Shop Information</CardTitle>
+                <CardDescription>Enter details about the shop you are visiting</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="shop-name">Shop Name</Label>
+                  <Input
+                    id="shop-name"
+                    placeholder="Enter shop name"
+                    value={shopName}
+                    onChange={(e) => setShopName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Notes</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Enter any notes about the visit"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Audio Recording Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Sales Pitch Recording</CardTitle>
+                <CardDescription>Record your sales pitch for quality assurance</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {audioURL ? (
+                    <div className="flex flex-col items-center space-y-2">
+                      <audio controls src={audioURL} ref={audioRef} className="w-full" />
+                      <Badge variant="outline">
+                        <CheckCircle className="mr-2 h-4 w-4" /> Recording saved
+                      </Badge>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      onClick={isRecording ? stopRecording : startRecording}
+                      disabled={locationError !== null}
                     >
-                      <X className="mr-2 h-4 w-4" />
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={completeVisit}
-                      disabled={isLoading || isRecording}
-                      className="flex-1"
-                    >
-                      {isLoading ? (
+                      {isRecording ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processing...
+                          <StopCircle className="mr-2 h-4 w-4 animate-pulse" />
+                          Stop Recording
                         </>
                       ) : (
                         <>
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          Complete Visit
+                          <Mic className="mr-2 h-4 w-4" />
+                          Start Recording
                         </>
                       )}
                     </Button>
-                  </div>
-                )}
-              </CardFooter>
-            </Card>
-
-            {/* Today's Visits */}
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold tracking-tight">Today's Visits ({todayVisits.length})</h2>
-              
-              {todayVisits.length === 0 ? (
-                <Card>
-                  <CardContent className="p-6 text-center text-muted-foreground">
-                    No shop visits recorded today
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-4">
-                  {todayVisits.map((visit) => (
-                    <Card key={visit.id}>
-                      <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">{visit.shop_name}</CardTitle>
-                          <div className="flex items-center">
-                            {visit.status === 'completed' && (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mr-2">
-                                Completed
-                              </span>
-                            )}
-                            {visit.status === 'pending' && (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mr-2">
-                                In Progress
-                              </span>
-                            )}
-                            {visit.status === 'failed' && (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 mr-2">
-                                Cancelled
-                              </span>
-                            )}
-                            <span className="text-sm text-muted-foreground">
-                              {formatTime(visit.created_at)}
-                            </span>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-sm space-y-2">
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <span>
-                              Lat: {visit.location.latitude.toFixed(6)}, 
-                              Long: {visit.location.longitude.toFixed(6)}
-                            </span>
-                          </div>
-                          
-                          {visit.audio_url && (
-                            <div className="mt-2">
-                              <h4 className="text-sm font-medium mb-1">Sales Pitch Recording</h4>
-                              <audio controls src={visit.audio_url} className="w-full h-8" />
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                  )}
                 </div>
-              )}
+              </CardContent>
+            </Card>
+            
+            {/* Submit Button */}
+            <div className="flex justify-end">
+              <Button 
+                onClick={saveShopVisit}
+                disabled={isSubmitting || !shopName || !location}
+                className="w-full md:w-auto"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Shop Visit
+                  </>
+                )}
+              </Button>
             </div>
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
-};
-
-export default SalespersonTracker;
+}
