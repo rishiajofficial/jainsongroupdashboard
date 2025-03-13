@@ -1,244 +1,193 @@
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Briefcase, ClipboardCheck, Map, BarChart3 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { useDashboardSettings } from "@/contexts/DashboardSettingsContext";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import { useCandidateAssessments } from "@/hooks/useDashboardWidgets";
+import { UserRole } from "@/pages/DashboardPage";
+import { useDashboardSettings } from "@/contexts/DashboardSettingsContext";
 
-interface ProfileData {
-  fullName: string;
-  email: string;
+interface DashboardProps {
+  userData: {
+    fullName: string;
+    email: string;
+    role: UserRole;
+  };
 }
 
-function CandidateStatsWidget() {
-  const [stats, setStats] = useState({
-    totalApplications: 0,
-    pendingApplications: 0,
-    pendingAssessments: 0,
-    completedAssessments: 0
-  });
-  const [isLoading, setIsLoading] = useState(true);
+export function CandidateDashboard({ userData }: DashboardProps) {
+  const { isWidgetVisible } = useDashboardSettings();
+  const [userId, setUserId] = useState<string>("");
+  const [applications, setApplications] = useState<any[]>([]);
+  const [applicationsLoading, setApplicationsLoading] = useState(true);
+  const [jobsLoading, setJobsLoading] = useState(true);
+  const [jobs, setJobs] = useState<any[]>([]);
+  const { data: assessments, loading: assessmentsLoading } = useCandidateAssessments(userId);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchUserData = async () => {
       try {
-        setIsLoading(true);
-        
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-        
-        // Get applications statistics
-        const { data: applicationsData, error: applicationsError } = await supabase
-          .from('applications')
-          .select('status')
-          .eq('candidate_id', session.user.id);
-          
-        if (applicationsError) throw applicationsError;
-        
-        const totalApps = applicationsData?.length || 0;
-        const pendingApps = applicationsData?.filter(app => app.status === 'pending').length || 0;
-        
-        // Get assessment statistics
-        const { data: assessmentsData, error: assessmentsError } = await supabase
-          .from('candidate_assessments')
-          .select('status')
-          .eq('candidate_id', session.user.id);
-          
-        if (assessmentsError) throw assessmentsError;
-        
-        const pendingAssessments = assessmentsData?.filter(
-          assessment => assessment.status === 'assigned' || assessment.status === 'in_progress'
-        ).length || 0;
-        
-        const completedAssessments = assessmentsData?.filter(
-          assessment => assessment.status === 'completed'
-        ).length || 0;
-        
-        setStats({
-          totalApplications: totalApps,
-          pendingApplications: pendingApps,
-          pendingAssessments,
-          completedAssessments
-        });
+        if (session?.user?.id) {
+          setUserId(session.user.id);
+        }
       } catch (error) {
-        console.error("Error fetching candidate stats:", error);
-      } finally {
-        setIsLoading(false);
+        console.error("Error getting session:", error);
       }
     };
-    
-    fetchStats();
+
+    fetchUserData();
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {[1, 2, 3, 4].map((i) => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader className="pb-2">
-              <div className="h-5 w-24 bg-muted rounded-md"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-8 w-16 bg-muted rounded-md"></div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchApplications = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("applications")
+          .select("*, jobs:job_id(title)")
+          .eq("candidate_id", userId);
+
+        if (error) throw error;
+        setApplications(data || []);
+      } catch (error) {
+        console.error("Error fetching applications:", error);
+      } finally {
+        setApplicationsLoading(false);
+      }
+    };
+
+    const fetchJobs = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("jobs")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(5);
+
+        if (error) throw error;
+        setJobs(data || []);
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+      } finally {
+        setJobsLoading(false);
+      }
+    };
+
+    fetchApplications();
+    fetchJobs();
+  }, [userId]);
+
+  if (!userId) {
+    return <div className="text-center text-muted-foreground">Loading dashboard...</div>;
   }
 
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Total Applications</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.totalApplications}</div>
-          <p className="text-xs text-muted-foreground mt-1">
-            All jobs you've applied to
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Pending Applications</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.pendingApplications}</div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Applications awaiting review
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Pending Assessments</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.pendingAssessments}</div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Assessments to complete
-          </p>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium">Completed Assessments</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{stats.completedAssessments}</div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Assessments you've finished
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+  const jobsOverview = applications.reduce(
+    (acc, app) => {
+      if (app.status === "submitted") acc.submitted++;
+      else if (app.status === "review") acc.under_review++;
+      else if (app.status === "interview") acc.interviews++;
+      else if (app.status === "offered") acc.offers++;
+      else if (app.status === "rejected") acc.rejected++;
+      return acc;
+    },
+    { submitted: 0, under_review: 0, interviews: 0, offers: 0, rejected: 0 }
   );
-}
 
-export function CandidateDashboard({ userData }: { userData: ProfileData | null }) {
-  const navigate = useNavigate();
-  const { isWidgetVisible } = useDashboardSettings();
+  const assessmentStats = {
+    total: assessments?.length || 0,
+    completed: assessments?.filter((a: any) => a.status === "completed").length || 0,
+    pending: assessments?.filter((a: any) => a.status === "assigned").length || 0,
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Stats Section */}
-      {isWidgetVisible('jobs_overview', 'candidate') && <CandidateStatsWidget />}
-      
-      {/* Job Opportunities Section */}
-      {isWidgetVisible('quick_actions', 'candidate') && (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {isWidgetVisible('jobs_overview', userData.role) && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Briefcase className="mr-2 h-5 w-5" />
-              Job Opportunities
-            </CardTitle>
-            <CardDescription>
-              Browse available job listings
-            </CardDescription>
+            <CardTitle className="text-lg">Job Applications</CardTitle>
           </CardHeader>
           <CardContent>
-            <Button 
-              onClick={() => navigate("/jobs")} 
-              className="w-full sm:w-auto"
-            >
-              Browse Available Jobs
-            </Button>
+            {applicationsLoading ? (
+              <div className="h-32 flex items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total Applications</span>
+                  <span className="font-semibold">{applications.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Under Review</span>
+                  <span className="font-semibold">{jobsOverview.under_review}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Interviews</span>
+                  <span className="font-semibold">{jobsOverview.interviews}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Offers</span>
+                  <span className="font-semibold">{jobsOverview.offers}</span>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
-      
-      {/* My Applications Section */}
-      {isWidgetVisible('applications_stats', 'candidate') && (
+
+      {isWidgetVisible('assessment_stats', userData.role) && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <ClipboardCheck className="mr-2 h-5 w-5" />
-              My Applications
-            </CardTitle>
-            <CardDescription>
-              Track your job applications
-            </CardDescription>
+            <CardTitle className="text-lg">Assessments</CardTitle>
           </CardHeader>
           <CardContent>
-            <Button 
-              onClick={() => navigate("/applications")} 
-              className="w-full sm:w-auto"
-            >
-              View My Applications
-            </Button>
+            {assessmentsLoading ? (
+              <div className="h-32 flex items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total Assessments</span>
+                  <span className="font-semibold">{assessmentStats.total}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Completed</span>
+                  <span className="font-semibold">{assessmentStats.completed}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Pending</span>
+                  <span className="font-semibold">{assessmentStats.pending}</span>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
-      
-      {/* My Assessments Section */}
-      {isWidgetVisible('assessment_stats', 'candidate') && (
-        <Card>
+
+      {isWidgetVisible('recent_activities', userData.role) && (
+        <Card className="md:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <ClipboardCheck className="mr-2 h-5 w-5" />
-              My Assessments
-            </CardTitle>
-            <CardDescription>
-              Take and view your assigned assessments
-            </CardDescription>
+            <CardTitle className="text-lg">Recent Job Postings</CardTitle>
           </CardHeader>
           <CardContent>
-            <Button 
-              onClick={() => navigate("/assessments/candidate")} 
-              className="w-full sm:w-auto"
-            >
-              View My Assessments
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-      
-      {/* Shop Visit Tracking Section */}
-      {isWidgetVisible('visits_stats', 'candidate') && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Map className="mr-2 h-5 w-5" />
-              Shop Visit Tracking
-            </CardTitle>
-            <CardDescription>
-              Record your shop visits and sales pitches
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              onClick={() => navigate("/salesperson-tracker")} 
-              className="w-full sm:w-auto"
-            >
-              Track Shop Visits
-            </Button>
+            {jobsLoading ? (
+              <div className="h-32 flex items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+              </div>
+            ) : jobs.length > 0 ? (
+              <div className="space-y-4">
+                {jobs.map((job) => (
+                  <div key={job.id} className="border-b pb-2 last:border-0">
+                    <div className="font-medium">{job.title}</div>
+                    <div className="text-sm text-muted-foreground">{job.location}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-muted-foreground">No recent job postings</div>
+            )}
           </CardContent>
         </Card>
       )}

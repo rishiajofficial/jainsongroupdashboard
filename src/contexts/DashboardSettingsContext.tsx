@@ -121,15 +121,21 @@ export function DashboardSettingsProvider({ children }: { children: ReactNode })
       const { data, error } = await supabase
         .from('dashboard_widget_settings')
         .select('*')
-        .order('order', { ascending: true });
+        .order('order_number', { ascending: true });
 
       if (error) {
         throw error;
       }
 
-      const typedSettings = data?.map(setting => ({
-        ...setting,
-        allowed_roles: setting.allowed_roles as UserRole[]
+      const typedSettings: DashboardWidgetSettings[] = data?.map(setting => ({
+        id: setting.id,
+        widget_key: setting.widget_key,
+        widget_name: setting.widget_name,
+        is_visible: setting.is_visible,
+        allowed_roles: setting.allowed_roles as UserRole[],
+        description: setting.description || '',
+        widget_type: setting.widget_type as 'stats' | 'actions' | 'info',
+        order: setting.order_number
       })) || [];
 
       console.log("Fetched dashboard settings:", typedSettings.length);
@@ -153,9 +159,20 @@ export function DashboardSettingsProvider({ children }: { children: ReactNode })
       }
 
       if (count === 0) {
+        // Convert to database format
+        const dbWidgets = DEFAULT_DASHBOARD_WIDGETS.map(widget => ({
+          widget_key: widget.widget_key,
+          widget_name: widget.widget_name,
+          is_visible: widget.is_visible,
+          allowed_roles: widget.allowed_roles,
+          description: widget.description,
+          widget_type: widget.widget_type,
+          order_number: widget.order
+        }));
+
         const { error: insertError } = await supabase
           .from('dashboard_widget_settings')
-          .insert(DEFAULT_DASHBOARD_WIDGETS);
+          .insert(dbWidgets);
 
         if (insertError) {
           throw insertError;
@@ -172,9 +189,19 @@ export function DashboardSettingsProvider({ children }: { children: ReactNode })
 
   const updateWidgetSetting = async (settingId: string, updates: Partial<DashboardWidgetSettings>) => {
     try {
+      // Convert from our app model to the database model
+      const dbUpdates: any = {};
+      
+      if (updates.widget_name !== undefined) dbUpdates.widget_name = updates.widget_name;
+      if (updates.is_visible !== undefined) dbUpdates.is_visible = updates.is_visible;
+      if (updates.allowed_roles !== undefined) dbUpdates.allowed_roles = updates.allowed_roles;
+      if (updates.description !== undefined) dbUpdates.description = updates.description;
+      if (updates.widget_type !== undefined) dbUpdates.widget_type = updates.widget_type;
+      if (updates.order !== undefined) dbUpdates.order_number = updates.order;
+
       const { error } = await supabase
         .from('dashboard_widget_settings')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', settingId);
 
       if (error) {

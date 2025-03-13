@@ -175,6 +175,74 @@ export type Database = {
           },
         ]
       }
+      candidate_assessments: {
+        Row: {
+          assessment_id: string
+          candidate_id: string
+          created_at: string
+          id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assessment_id: string
+          candidate_id: string
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assessment_id?: string
+          candidate_id?: string
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_assessments_assessment_id_fkey"
+            columns: ["assessment_id"]
+            isOneToOne: false
+            referencedRelation: "assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dashboard_widget_settings: {
+        Row: {
+          allowed_roles: string[]
+          description: string | null
+          id: string
+          is_visible: boolean
+          order_number: number
+          widget_key: string
+          widget_name: string
+          widget_type: string
+        }
+        Insert: {
+          allowed_roles: string[]
+          description?: string | null
+          id?: string
+          is_visible?: boolean
+          order_number: number
+          widget_key: string
+          widget_name: string
+          widget_type: string
+        }
+        Update: {
+          allowed_roles?: string[]
+          description?: string | null
+          id?: string
+          is_visible?: boolean
+          order_number?: number
+          widget_key?: string
+          widget_name?: string
+          widget_type?: string
+        }
+        Relationships: []
+      }
       jobs: {
         Row: {
           created_at: string
@@ -429,6 +497,27 @@ export type Database = {
           },
         ]
       }
+      salesperson_managers: {
+        Row: {
+          created_at: string
+          id: string
+          manager_id: string
+          salesperson_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          manager_id: string
+          salesperson_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          manager_id?: string
+          salesperson_id?: string
+        }
+        Relationships: []
+      }
       shop_visits: {
         Row: {
           audio_url: string | null
@@ -566,6 +655,79 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "training_quiz_questions_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "training_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_quiz_results: {
+        Row: {
+          created_at: string
+          id: string
+          score: number
+          total_questions: number
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          score?: number
+          total_questions?: number
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          score?: number
+          total_questions?: number
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_quiz_results_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "training_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_video_progress: {
+        Row: {
+          created_at: string
+          id: string
+          last_position: number
+          progress_percentage: number
+          updated_at: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_position?: number
+          progress_percentage?: number
+          updated_at?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_position?: number
+          progress_percentage?: number
+          updated_at?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_video_progress_video_id_fkey"
             columns: ["video_id"]
             isOneToOne: false
             referencedRelation: "training_videos"
