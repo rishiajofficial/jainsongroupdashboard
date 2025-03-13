@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Bell, Briefcase, ClipboardList, GraduationCap, Map, Shield, User, Settings } from "lucide-react";
+import { Bell, Briefcase, ClipboardCheck, GraduationCap, Map, Shield, User, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useUnreadApplications } from "@/hooks/useUnreadApplications";
@@ -27,7 +27,7 @@ export function ManagerNavigation({ variant, onClose = () => {} }: ManagerNaviga
   
   // Check if a page is accessible (enabled)
   const isPageAccessible = (path: string) => {
-    if (isLoading) return true; // Show all during loading
+    if (isLoading) return false; // Hide during loading
     const rule = accessRules.find(r => r.page_path === path);
     return rule && rule.is_enabled;
   };
@@ -61,7 +61,7 @@ export function ManagerNavigation({ variant, onClose = () => {} }: ManagerNaviga
           onClick={handleClick}
         >
           <span>
-            {isMobile && <ClipboardList className="h-4 w-4 inline mr-2" />}
+            {isMobile && <ClipboardCheck className="h-4 w-4 inline mr-2" />}
             Review Applications
           </span>
           {hasUnread && (
@@ -81,7 +81,7 @@ export function ManagerNavigation({ variant, onClose = () => {} }: ManagerNaviga
           className={linkClass}
           onClick={handleClick}
         >
-          {isMobile && <ClipboardList className="h-4 w-4 inline mr-2" />}
+          {isMobile && <ClipboardCheck className="h-4 w-4 inline mr-2" />}
           Assessment Templates
         </Link>
       )}
@@ -92,7 +92,7 @@ export function ManagerNavigation({ variant, onClose = () => {} }: ManagerNaviga
           className={linkClass}
           onClick={handleClick}
         >
-          {isMobile && <ClipboardList className="h-4 w-4 inline mr-2" />}
+          {isMobile && <ClipboardCheck className="h-4 w-4 inline mr-2" />}
           Assign Assessments
         </Link>
       )}

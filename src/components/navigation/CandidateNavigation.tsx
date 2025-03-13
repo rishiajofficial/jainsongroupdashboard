@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Briefcase, FileText, Map } from "lucide-react";
+import { Briefcase, FileText, Map, ClipboardCheck } from "lucide-react";
 import { usePageAccess } from "@/contexts/PageAccessContext";
 
 interface CandidateNavigationProps {
@@ -66,7 +66,7 @@ export function CandidateNavigation({ variant, onClose = () => {} }: CandidateNa
           className={linkClass}
           onClick={handleClick}
         >
-          {isMobile && <FileText className="h-4 w-4 inline mr-2" />}
+          {isMobile && <ClipboardCheck className="h-4 w-4 inline mr-2" />}
           My Assessments
         </Link>
       )}
