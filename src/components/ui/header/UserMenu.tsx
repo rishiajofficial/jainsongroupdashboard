@@ -38,7 +38,8 @@ const getRoleBadgeVariant = (role: UserRole) => {
     case 'manager':
       return 'default';
     case 'salesperson':
-      return 'warning';
+      // Changed from 'warning' to 'secondary' as 'warning' is not a valid variant
+      return 'secondary';
     case 'candidate':
     default:
       return 'secondary';

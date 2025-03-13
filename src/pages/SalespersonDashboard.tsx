@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Header } from "@/components/ui/header";
 import { Sidebar } from "@/components/ui/sidebar";
@@ -110,7 +109,7 @@ const SalespersonDashboard = () => {
         .eq('id', sessionData.session.user.id)
         .single();
         
-      if (profileData?.role !== 'manager' && profileData?.role !== 'admin') {
+      if (profileData?.role !== 'manager' && profileData?.role !== 'admin' && profileData?.role !== 'salesperson') {
         toast({
           description: "Access denied. Only managers can access this dashboard",
           variant: "destructive",
@@ -530,7 +529,6 @@ const StatsCards = ({ data, isLoading }: { data: DailyStats[]; isLoading: boolea
   );
 };
 
-// Helper function to format dates correctly
 const formatDate = (dateString: string) => {
   const options: Intl.DateTimeFormatOptions = { 
     month: 'short', 

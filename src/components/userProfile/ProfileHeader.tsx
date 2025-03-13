@@ -1,7 +1,7 @@
 
 import { Badge } from "@/components/ui/badge";
 
-type UserRole = 'candidate' | 'manager' | 'admin';
+type UserRole = 'candidate' | 'salesperson' | 'manager' | 'admin';
 
 interface ProfileHeaderProps {
   userRole?: UserRole;
@@ -14,6 +14,8 @@ const getRoleBadgeVariant = (role: UserRole) => {
       return 'destructive';
     case 'manager':
       return 'default';
+    case 'salesperson':
+      return 'secondary';
     case 'candidate':
     default:
       return 'secondary';
