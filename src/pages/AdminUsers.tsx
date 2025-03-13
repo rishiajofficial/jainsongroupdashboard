@@ -83,15 +83,18 @@ const AdminUsers = () => {
   const fetchUsers = async () => {
     try {
       setIsLoading(true);
+      console.log("Fetching users...");
+      
+      // Using a direct query without filters to get all users
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
 
       if (error) {
         throw error;
       }
 
+      console.log("Fetched users:", data?.length);
       setUsers(data || []);
     } catch (error) {
       console.error('Error fetching users:', error);

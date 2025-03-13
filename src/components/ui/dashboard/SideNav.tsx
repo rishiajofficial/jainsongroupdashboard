@@ -22,7 +22,7 @@ const navigationItems = {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/jobs", label: "Browse Jobs", icon: Briefcase },
     { href: "/applications", label: "My Applications", icon: FileText },
-    { href: "/assessments/candidate", label: "My Assessments", icon: ClipboardList },
+    { href: "/assessments/candidate", label: "My Assessments", icon: ClipboardCheck },
   ],
   salesperson: [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -43,7 +43,7 @@ const navigationItems = {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/approvals", label: "Manager Approvals", icon: UserCheck },
     { href: "/admin/users", label: "User Management", icon: Users },
-    { href: "/admin/jobs", label: "Jobs Overview", icon: Briefcase },
+    { href: "/admin/page-access", label: "Page Access", icon: FileText },
     { href: "/admin/stats", label: "Platform Stats", icon: BarChart4 },
   ]
 };
@@ -54,7 +54,7 @@ interface SideNavProps {
 
 export function SideNav({ role }: SideNavProps) {
   const location = useLocation();
-  const { hasAccess, accessRules, isLoading } = usePageAccess();
+  const { accessRules, isLoading } = usePageAccess();
   const items = navigationItems[role] || navigationItems.candidate;
 
   // Filter navigation items based on page access rules
@@ -62,10 +62,16 @@ export function SideNav({ role }: SideNavProps) {
     // Always show dashboard
     if (item.href === "/dashboard") return true;
     
-    // If we're an admin, show everything
-    if (role === 'admin') return true;
+    // If we're an admin, show everything (but still check if the page is enabled)
+    if (role === 'admin') {
+      // For admin, check if the page is enabled in access rules
+      if (isLoading) return true;
+      
+      const rule = accessRules.find(r => r.page_path === item.href);
+      return !rule || rule.is_enabled; // Show if no rule or if enabled
+    }
     
-    // Check if page is enabled in access rules
+    // For non-admins, check if page is enabled in access rules
     if (isLoading) return true; // Show all items while loading
     
     const rule = accessRules.find(r => r.page_path === item.href);

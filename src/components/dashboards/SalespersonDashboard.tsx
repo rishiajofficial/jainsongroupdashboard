@@ -19,7 +19,7 @@ export function SalespersonDashboard({ userData }: { userData: ProfileData | nul
 
   // Check if a page is accessible (enabled)
   const isPageAccessible = (path: string) => {
-    if (isLoading) return true; // Show all during loading
+    if (isLoading) return false; // Hide during loading
     const rule = accessRules.find(r => r.page_path === path);
     return rule && rule.is_enabled;
   };
