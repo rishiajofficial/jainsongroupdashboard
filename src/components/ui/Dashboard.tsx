@@ -6,9 +6,7 @@ import { ManagerDashboard } from "@/components/dashboards/ManagerDashboard";
 import { CandidateDashboard } from "@/components/dashboards/CandidateDashboard";
 import { SalespersonDashboard } from "@/components/dashboards/SalespersonDashboard";
 import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
-import { SideNav } from "@/components/ui/dashboard/SideNav";
-
-type UserRole = 'candidate' | 'salesperson' | 'manager' | 'admin';
+import { UserRole } from "@/pages/DashboardPage";
 
 interface ProfileData {
   fullName: string;
@@ -79,21 +77,9 @@ export function Dashboard() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex animate-fade-up">
-      {userData && <SideNav role={userData.role} />}
-      <div className="flex-1 p-6">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Welcome to HiringDash</h2>
-          <p className="text-muted-foreground">
-            {userData?.role === 'candidate' ? 'Find your next opportunity' : 
-             userData?.role === 'salesperson' ? 'Track your sales visits' :
-             userData?.role === 'manager' ? 'Manage your hiring process efficiently' :
-             'Administer the hiring platform'}
-          </p>
-        </div>
-
-        {/* Welcome Card */}
-        <Card className="mt-6">
+    <div className="min-h-[calc(100vh-4rem)] animate-fade-up">
+      <div className="p-6">
+        <Card>
           <CardHeader>
             <CardTitle>Dashboard Home</CardTitle>
             <CardDescription>

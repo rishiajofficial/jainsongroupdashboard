@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/ui/Header";
 import { Footer } from "@/components/ui/Footer";
-import { Dashboard } from "@/components/ui/Dashboard";
 import { SideNav } from "@/components/ui/dashboard/SideNav";
 import { toast } from "sonner";
 
@@ -64,10 +63,17 @@ const DashboardPage = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <div className="flex flex-1">
+      <div className="flex-1 flex">
         <SideNav role={userRole} />
         <main className="flex-1 p-6">
-          <Dashboard />
+          <h2 className="text-3xl font-bold tracking-tight">Welcome to HiringDash</h2>
+          <p className="text-muted-foreground mb-6">
+            {userRole === 'candidate' ? 'Find your next opportunity' : 
+             userRole === 'salesperson' ? 'Track your sales visits' :
+             userRole === 'manager' ? 'Manage your hiring process efficiently' :
+             'Administer the hiring platform'}
+          </p>
+          {/* Dashboard content will be directly determined by the route */}
         </main>
       </div>
       <Footer />
