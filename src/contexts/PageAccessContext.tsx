@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageAccessRule, CONFIGURABLE_PAGES } from "@/types/pageAccess";
@@ -31,7 +30,6 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
         throw error;
       }
 
-      // Convert the string[] to UserRole[] before setting state
       const typedRules = data?.map(rule => ({
         ...rule,
         allowed_roles: rule.allowed_roles as UserRole[]
@@ -48,7 +46,6 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
 
   const createDefaultRulesIfNeeded = async () => {
     try {
-      // Check if rules already exist
       const { count, error: countError } = await supabase
         .from('page_access_rules')
         .select('*', { count: 'exact', head: true });
@@ -57,7 +54,6 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
         throw countError;
       }
 
-      // If no rules exist, create defaults
       if (count === 0) {
         const defaultRules = CONFIGURABLE_PAGES.map(page => ({
           page_path: page.path,
@@ -74,7 +70,6 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
           throw insertError;
         }
 
-        // Fetch the newly created rules
         await fetchRules();
       }
     } catch (error) {
@@ -94,7 +89,6 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
         throw error;
       }
 
-      // Update local state
       setAccessRules(accessRules.map(rule => 
         rule.id === ruleId ? { ...rule, ...updates } : rule
       ));
@@ -108,15 +102,14 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
   };
 
   const hasAccess = (path: string, role: UserRole): boolean => {
-    if (isLoading) return true; // Default to true while loading
+    if (role === 'admin') return true;
     
-    // Find the rule for this path
+    if (isLoading) return true;
+    
     const rule = accessRules.find(r => r.page_path === path);
     
-    // If no rule exists or the page is disabled, deny access
     if (!rule || !rule.is_enabled) return false;
     
-    // Check if the user's role is in the allowed roles list
     return rule.allowed_roles.includes(role);
   };
 

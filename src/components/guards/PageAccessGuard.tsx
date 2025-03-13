@@ -67,7 +67,13 @@ export function PageAccessGuard({ children }: PageAccessGuardProps) {
           return;
         }
         
-        // Check if the user has access to this page
+        // Always allow admins access to all pages
+        if (role === 'admin') {
+          setIsAuthorized(true);
+          return;
+        }
+        
+        // For non-admins, check if they have access to this page
         const canAccess = hasAccess(location.pathname, role);
         setIsAuthorized(canAccess);
         
