@@ -35,7 +35,7 @@ export function Footer() {
           <div>
             <h3 className="font-medium text-lg mb-4">Jainson Group</h3>
             <p className="text-sm text-muted-foreground">
-              The Sales Career Growth Platform connecting talented salespeople with companies that value performance.
+              AI-powered workforce management platform for hiring, training, and supervising your team with data-driven insights.
             </p>
           </div>
           
