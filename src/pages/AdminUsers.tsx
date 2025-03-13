@@ -85,7 +85,7 @@ const AdminUsers = () => {
       setIsLoading(true);
       console.log("Fetching users...");
       
-      // Using a direct query without filters to get all users
+      // Using a more reliable query to get all users
       const { data, error } = await supabase
         .from('profiles')
         .select('*');
@@ -94,7 +94,7 @@ const AdminUsers = () => {
         throw error;
       }
 
-      console.log("Fetched users:", data?.length);
+      console.log("Fetched users:", data);
       setUsers(data || []);
     } catch (error) {
       console.error('Error fetching users:', error);

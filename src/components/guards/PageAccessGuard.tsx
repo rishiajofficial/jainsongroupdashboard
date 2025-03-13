@@ -19,7 +19,7 @@ export function PageAccessGuard({ children }: PageAccessGuardProps) {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { hasAccess } = usePageAccess();
+  const { hasAccess, accessRules } = usePageAccess();
   
   useEffect(() => {
     const checkUserAccess = async () => {
@@ -40,6 +40,7 @@ export function PageAccessGuard({ children }: PageAccessGuardProps) {
             // For public routes, allow access
             setIsAuthorized(true);
           }
+          setIsLoading(false);
           return;
         }
         
@@ -53,6 +54,7 @@ export function PageAccessGuard({ children }: PageAccessGuardProps) {
         if (profileError) {
           console.error("Error fetching profile:", profileError);
           setIsAuthorized(false);
+          setIsLoading(false);
           return;
         }
         
@@ -64,12 +66,21 @@ export function PageAccessGuard({ children }: PageAccessGuardProps) {
             location.pathname === '/login' || 
             location.pathname === '/signup') {
           setIsAuthorized(true);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Dashboard is always accessible to logged in users
+        if (location.pathname === '/dashboard') {
+          setIsAuthorized(true);
+          setIsLoading(false);
           return;
         }
         
         // Always allow admins access to all pages
         if (role === 'admin') {
           setIsAuthorized(true);
+          setIsLoading(false);
           return;
         }
         

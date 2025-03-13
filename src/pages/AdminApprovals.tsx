@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/ui/Header";
@@ -50,12 +51,16 @@ const AdminApprovals = () => {
     try {
       setIsLoading(true);
       
-      // Get manager approvals and join with profiles data
+      // Get manager approvals with user details
       const { data, error } = await supabase
         .from('manager_approvals')
         .select(`
-          *,
-          user: profiles!manager_approvals_manager_id_fkey(
+          id,
+          manager_id,
+          status,
+          created_at,
+          approved_by,
+          user:profiles!manager_approvals_manager_id_fkey(
             id, full_name, email, role, company, position
           )
         `)
@@ -65,8 +70,8 @@ const AdminApprovals = () => {
         throw error;
       }
 
-      const typedRequests = data as ApprovalRequest[] || [];
-      setApprovalRequests(typedRequests);
+      console.log("Fetched approval requests:", data);
+      setApprovalRequests(data as ApprovalRequest[] || []);
     } catch (error) {
       console.error('Error fetching approval requests:', error);
       toast.error('Failed to load approval requests');
@@ -97,10 +102,25 @@ const AdminApprovals = () => {
         throw updateError;
       }
       
+      // Also update the user's role in profiles table
+      const { error: userUpdateError } = await supabase
+        .from('profiles')
+        .update({ role: 'manager' })
+        .eq('id', userId);
+        
+      if (userUpdateError) {
+        throw userUpdateError;
+      }
+      
       // Update local state
       setApprovalRequests(approvalRequests.map(request => 
         request.id === requestId 
-          ? { ...request, status: 'approved', approved_by: user.id } 
+          ? { 
+              ...request, 
+              status: 'approved', 
+              approved_by: user.id,
+              user: { ...request.user, role: 'manager' } 
+            } 
           : request
       ));
       

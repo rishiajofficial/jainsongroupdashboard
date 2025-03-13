@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -78,7 +77,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               }
             }
             
-            toast.success("Account created successfully! Your account needs to be approved by an administrator.");
+            toast.success("Account created successfully! Your role change request has been sent for approval.");
           }
         } else {
           toast.success("Account created successfully! You can now log in.");
