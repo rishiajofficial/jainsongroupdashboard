@@ -5,11 +5,26 @@ import { Sidebar } from "@/components/ui/sidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Download, Calendar, Map, User, Store } from "lucide-react";
+import { Loader2, Download, User, Map } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Link } from "react-router-dom";
+import { Json } from "@/integrations/supabase/types";
 
+// Type that matches what's coming from Supabase
+interface SupabaseShopVisit {
+  id: string;
+  location: Json;
+  audio_url?: string | null;
+  created_at: string;
+  salesperson_id: string;
+  shop_name: string;
+  notes?: string | null;
+  status: 'pending' | 'completed' | 'failed';
+  updated_at: string;
+}
+
+// Type for our application's internal use
 interface ShopVisit {
   id: string;
   location: {
@@ -44,6 +59,29 @@ interface DailyStats {
     }
   }
 }
+
+// Function to convert from Supabase type to our type
+const convertSupabaseVisit = (visit: SupabaseShopVisit): ShopVisit => {
+  // Parse the JSON location data
+  let locationObj = typeof visit.location === 'string' 
+    ? JSON.parse(visit.location) 
+    : visit.location;
+  
+  return {
+    id: visit.id,
+    location: {
+      latitude: locationObj.latitude,
+      longitude: locationObj.longitude,
+      address: locationObj.address
+    },
+    audio_url: visit.audio_url || undefined,
+    created_at: visit.created_at,
+    salesperson_id: visit.salesperson_id,
+    shop_name: visit.shop_name,
+    notes: visit.notes || undefined,
+    status: visit.status
+  };
+};
 
 const SalespersonDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -98,7 +136,7 @@ const SalespersonDashboard = () => {
       
       // Calculate date range
       const today = new Date();
-      let startDate = new Date(today);
+      let startDate = new Date();
       
       if (dateRange === 'today') {
         startDate.setHours(0, 0, 0, 0);
@@ -129,14 +167,20 @@ const SalespersonDashboard = () => {
         .order('created_at', { ascending: false });
         
       if (visitsError) throw visitsError;
-      setRecentVisits(visitsData as ShopVisit[]);
+      
+      // Convert the data to our application's format
+      const convertedVisits = visitsData 
+        ? visitsData.map(item => convertSupabaseVisit(item as SupabaseShopVisit)) 
+        : [];
+      
+      setRecentVisits(convertedVisits);
       
       // Generate daily stats
       const stats: DailyStats[] = [];
       const dateMap = new Map<string, DailyStats>();
       
-      if (visitsData) {
-        visitsData.forEach((visit: ShopVisit) => {
+      if (convertedVisits.length > 0) {
+        convertedVisits.forEach((visit: ShopVisit) => {
           const date = new Date(visit.created_at).toISOString().split('T')[0];
           
           if (!dateMap.has(date)) {

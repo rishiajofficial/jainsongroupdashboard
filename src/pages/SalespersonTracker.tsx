@@ -8,7 +8,22 @@ import { Mic, MapPin, CheckCircle, X, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Geolocation } from '@capacitor/geolocation';
+import { Json } from "@/integrations/supabase/types";
 
+// Type that matches what's coming from Supabase
+interface SupabaseShopVisit {
+  id: string;
+  location: Json;
+  audio_url?: string | null;
+  created_at: string;
+  salesperson_id: string;
+  shop_name: string;
+  notes?: string | null;
+  status: 'pending' | 'completed' | 'failed';
+  updated_at: string;
+}
+
+// Type for our application's internal use
 interface ShopVisit {
   id: string;
   location: {
@@ -23,6 +38,29 @@ interface ShopVisit {
   notes?: string;
   status: 'pending' | 'completed' | 'failed';
 }
+
+// Function to convert from Supabase type to our type
+const convertSupabaseVisit = (visit: SupabaseShopVisit): ShopVisit => {
+  // Parse the JSON location data
+  let locationObj = typeof visit.location === 'string' 
+    ? JSON.parse(visit.location) 
+    : visit.location;
+  
+  return {
+    id: visit.id,
+    location: {
+      latitude: locationObj.latitude,
+      longitude: locationObj.longitude,
+      address: locationObj.address
+    },
+    audio_url: visit.audio_url || undefined,
+    created_at: visit.created_at,
+    salesperson_id: visit.salesperson_id,
+    shop_name: visit.shop_name,
+    notes: visit.notes || undefined,
+    status: visit.status
+  };
+};
 
 const SalespersonTracker = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -58,7 +96,9 @@ const SalespersonTracker = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTodayVisits(data as ShopVisit[]);
+      // Convert the data to our application's format
+      const convertedData = data ? data.map(item => convertSupabaseVisit(item as SupabaseShopVisit)) : [];
+      setTodayVisits(convertedData);
     } catch (error) {
       console.error('Error fetching visits:', error);
       toast({
@@ -108,11 +148,15 @@ const SalespersonTracker = () => {
 
       if (error) throw error;
 
-      setCurrentVisit(data[0] as ShopVisit);
-      toast({
-        title: "Visit started",
-        description: "Your location has been recorded",
-      });
+      // Convert the data to our application's format
+      if (data && data.length > 0) {
+        const convertedVisit = convertSupabaseVisit(data[0] as SupabaseShopVisit);
+        setCurrentVisit(convertedVisit);
+        toast({
+          title: "Visit started",
+          description: "Your location has been recorded",
+        });
+      }
     } catch (error) {
       console.error('Error starting visit:', error);
       toast({
