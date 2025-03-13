@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Header } from "@/components/ui/Header";
 import { SideNav } from "@/components/ui/dashboard/SideNav";
@@ -39,20 +40,21 @@ const AdminPageAccess = () => {
   const [filteredRules, setFilteredRules] = useState<PageAccessRule[]>([]);
 
   useEffect(() => {
-    if (isLoading) return;
-    
     // Filter rules based on active tab
     if (activeTab === "all") {
       setFilteredRules(accessRules);
     } else {
       const roleFilter = activeTab as UserRole;
-      const filtered = accessRules.filter(rule => {
-        const relevantPage = CONFIGURABLE_PAGES.find(page => page.path === rule.page_path);
-        return relevantPage?.defaultRoles.includes(roleFilter);
-      });
-      setFilteredRules(filtered);
+      setFilteredRules(
+        accessRules.filter(rule => 
+          CONFIGURABLE_PAGES.find(page => 
+            page.path === rule.page_path && 
+            page.defaultRoles.includes(roleFilter)
+          )
+        )
+      );
     }
-  }, [accessRules, activeTab, isLoading]);
+  }, [accessRules, activeTab]);
 
   const handleInitialize = async () => {
     try {
@@ -154,7 +156,7 @@ const AdminPageAccess = () => {
                 </div>
               ) : (
                 <>
-                  <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+                  <Tabs defaultValue="all" className="mb-6" onValueChange={setActiveTab}>
                     <TabsList>
                       <TabsTrigger value="all">All Pages</TabsTrigger>
                       <TabsTrigger value="admin">Admin</TabsTrigger>
