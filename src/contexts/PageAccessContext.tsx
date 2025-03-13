@@ -31,7 +31,13 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
         throw error;
       }
 
-      setAccessRules(data || []);
+      // Convert the string[] to UserRole[] before setting state
+      const typedRules = data?.map(rule => ({
+        ...rule,
+        allowed_roles: rule.allowed_roles as UserRole[]
+      })) || [];
+
+      setAccessRules(typedRules);
     } catch (error) {
       console.error('Error fetching page access rules:', error);
       toast.error('Failed to load page access settings');
