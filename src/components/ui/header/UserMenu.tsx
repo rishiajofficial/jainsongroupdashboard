@@ -13,8 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
-type UserRole = 'candidate' | 'salesperson' | 'manager' | 'admin';
+import { UserRole } from "@/pages/DashboardPage";
 
 interface UserData {
   email?: string;

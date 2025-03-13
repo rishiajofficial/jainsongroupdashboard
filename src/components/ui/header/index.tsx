@@ -7,8 +7,7 @@ import { HeaderLogo } from "./HeaderLogo";
 import { UserMenu } from "./UserMenu";
 import { MobileMenu } from "./MobileMenu";
 import { PublicNavigation } from "@/components/navigation/PublicNavigation";
-
-type UserRole = 'candidate' | 'salesperson' | 'manager' | 'admin';
+import { UserRole } from "@/pages/DashboardPage";
 
 interface UserData {
   email?: string;

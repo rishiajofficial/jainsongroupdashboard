@@ -1,14 +1,16 @@
+
 import { useState, useEffect } from "react";
-import { Header } from "@/components/ui/header";
-import { Sidebar } from "@/components/ui/sidebar";
+import { Header } from "@/components/ui/Header";
+import { SideNav } from "@/components/ui/dashboard/SideNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Download, User, Map } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Json } from "@/integrations/supabase/types";
+import { UserRole } from "@/pages/DashboardPage";
 
 interface SupabaseShopVisit {
   id: string;
@@ -59,7 +61,7 @@ interface DailyStats {
 
 const convertSupabaseVisit = (visit: SupabaseShopVisit): ShopVisit => {
   let locationObj = typeof visit.location === 'string' 
-    ? JSON.parse(visit.location) 
+    ? JSON.parse(visit.location as string) 
     : visit.location;
   
   return {
@@ -78,14 +80,26 @@ const convertSupabaseVisit = (visit: SupabaseShopVisit): ShopVisit => {
   };
 };
 
+// Helper function to format dates consistently across the component
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const options: Intl.DateTimeFormatOptions = { 
+    month: 'short', 
+    day: 'numeric', 
+    year: 'numeric' 
+  };
+  return date.toLocaleDateString('en-US', options);
+};
+
 const SalespersonDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [salespeople, setSalespeople] = useState<Salesperson[]>([]);
   const [recentVisits, setRecentVisits] = useState<ShopVisit[]>([]);
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month'>('today');
-  const [role, setRole] = useState<'candidate' | 'salesperson' | 'manager' | 'admin'>('manager');
+  const [role, setRole] = useState<UserRole>('manager');
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchDashboardData();
@@ -250,21 +264,11 @@ const SalespersonDashboard = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const options: Intl.DateTimeFormatOptions = { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    };
-    return date.toLocaleDateString('en-US', options);
-  };
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <div className="flex-1 flex">
-        <Sidebar />
+        <SideNav role={role} />
         <main className="flex-1 p-6">
           <div className="max-w-7xl mx-auto space-y-8">
             <div className="flex justify-between items-center">

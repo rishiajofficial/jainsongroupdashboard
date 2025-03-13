@@ -4,10 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Briefcase, ClipboardList, Map } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { UserRole } from "@/pages/DashboardPage";
 
 interface ProfileData {
   fullName: string;
   email: string;
+  role?: UserRole;
 }
 
 export function SalespersonDashboard({ userData }: { userData: ProfileData | null }) {

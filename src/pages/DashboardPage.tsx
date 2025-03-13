@@ -8,7 +8,8 @@ import { Dashboard } from "@/components/ui/Dashboard";
 import { SideNav } from "@/components/ui/dashboard/SideNav";
 import { toast } from "sonner";
 
-type UserRole = 'candidate' | 'salesperson' | 'manager' | 'admin';
+// Create a consistent UserRole type that includes 'salesperson'
+export type UserRole = 'candidate' | 'salesperson' | 'manager' | 'admin';
 
 const DashboardPage = () => {
   const [userRole, setUserRole] = useState<UserRole>('candidate');
@@ -40,11 +41,7 @@ const DashboardPage = () => {
         setIsLoading(false);
       } catch (error) {
         console.error("Dashboard auth check error:", error);
-        toast({
-          title: "Authentication Error",
-          description: "Please sign in to access the dashboard",
-          variant: "destructive",
-        });
+        toast.error("Authentication Error - Please sign in to access the dashboard");
         navigate("/login");
       }
     };

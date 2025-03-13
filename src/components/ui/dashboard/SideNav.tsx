@@ -12,6 +12,7 @@ import {
   Users,
   UserCheck,
 } from 'lucide-react';
+import { UserRole } from '@/pages/DashboardPage';
 
 // Define navigation items by user role
 const navigationItems = {
@@ -43,7 +44,7 @@ const navigationItems = {
 };
 
 interface SideNavProps {
-  role: 'candidate' | 'salesperson' | 'manager' | 'admin';
+  role: UserRole;
 }
 
 export function SideNav({ role }: SideNavProps) {
