@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -148,20 +147,26 @@ const DashboardPage = () => {
         if (role === 'manager') {
           const { data: visits } = await supabase
             .from('shop_visits')
-            .select('id, shop_name, status, created_at, profiles(full_name)')
+            .select('id, shop_name, status, created_at, salesperson_id')
             .order('created_at', { ascending: false })
             .limit(5);
             
           if (visits) {
-            visits.forEach(visit => {
+            for (const visit of visits) {
+              const { data: salesperson } = await supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('id', visit.salesperson_id)
+                .single();
+                
               activities.push({
                 id: visit.id,
                 title: `Salesperson Visit`,
-                description: `${visit.profiles?.full_name || 'A salesperson'} visited ${visit.shop_name}`,
+                description: `${salesperson?.full_name || 'A salesperson'} visited ${visit.shop_name}`,
                 timestamp: visit.created_at,
                 type: 'visit'
               });
-            });
+            }
           }
         }
         
@@ -169,21 +174,27 @@ const DashboardPage = () => {
         if (role === 'admin') {
           const { data: approvals } = await supabase
             .from('manager_approvals')
-            .select('id, status, created_at, profiles(full_name)')
+            .select('id, status, created_at, manager_id')
             .eq('status', 'pending')
             .order('created_at', { ascending: false })
             .limit(5);
             
           if (approvals) {
-            approvals.forEach(approval => {
+            for (const approval of approvals) {
+              const { data: manager } = await supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('id', approval.manager_id)
+                .single();
+                
               activities.push({
                 id: approval.id,
                 title: `Pending Approval`,
-                description: `${approval.profiles?.full_name || 'Someone'} is waiting for manager approval`,
+                description: `${manager?.full_name || 'Someone'} is waiting for manager approval`,
                 timestamp: approval.created_at,
                 type: 'application'
               });
-            });
+            }
           }
         }
       }

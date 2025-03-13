@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -86,7 +85,7 @@ export const useSalespersonDashboard = () => {
       const { data: peopleData, error: peopleError } = await supabase
         .from('profiles')
         .select('id, full_name, email, avatar_url')
-        .in('role', ['salesperson']);
+        .eq('role', 'salesperson');
         
       if (peopleError) throw peopleError;
       setSalespeople(peopleData as Salesperson[]);
