@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { UserRole } from "@/pages/DashboardPage";
 
 type AuthFormProps = {
   mode: "login" | "signup";
@@ -18,7 +18,7 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState<"candidate" | "salesperson" | "manager" | "admin">("candidate");
+  const [role, setRole] = useState<UserRole>("candidate");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -29,7 +29,6 @@ export function AuthForm({ mode }: AuthFormProps) {
     
     try {
       if (mode === "login") {
-        // Log in with Supabase
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -41,7 +40,6 @@ export function AuthForm({ mode }: AuthFormProps) {
         navigate("/dashboard");
       } else {
         console.log("Signing up with role:", role);
-        // Sign up with Supabase
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -100,7 +98,7 @@ export function AuthForm({ mode }: AuthFormProps) {
                 <Label>User Role</Label>
                 <RadioGroup 
                   value={role} 
-                  onValueChange={(value) => setRole(value as "candidate" | "salesperson" | "manager" | "admin")}
+                  onValueChange={(value) => setRole(value as UserRole)}
                   className="flex flex-col space-y-2 mt-2"
                 >
                   <div className="flex items-center space-x-2">

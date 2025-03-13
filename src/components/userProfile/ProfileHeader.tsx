@@ -1,7 +1,6 @@
 
 import { Badge } from "@/components/ui/badge";
-
-type UserRole = 'candidate' | 'salesperson' | 'manager' | 'admin';
+import { UserRole } from "@/pages/DashboardPage";
 
 interface ProfileHeaderProps {
   userRole?: UserRole;
