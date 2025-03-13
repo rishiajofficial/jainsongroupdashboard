@@ -9,11 +9,11 @@ import {
   GraduationCap,
   LayoutDashboard,
   Map,
-  ShoppingBag,
   Users,
   UserCheck,
 } from 'lucide-react';
 import { UserRole } from '@/pages/DashboardPage';
+import { usePageAccess } from '@/contexts/PageAccessContext';
 
 // Define navigation items by user role
 const navigationItems = {
@@ -53,7 +53,19 @@ interface SideNavProps {
 
 export function SideNav({ role }: SideNavProps) {
   const location = useLocation();
+  const { accessRules, isLoading } = usePageAccess();
   const items = navigationItems[role] || navigationItems.candidate;
+
+  // Filter navigation items based on page access rules
+  const filteredItems = items.filter(item => {
+    if (role === 'admin') return true; // Admin can access everything
+    
+    if (isLoading) return true; // Show all during loading
+    
+    // Check if the page is accessible
+    const rule = accessRules.find(r => r.page_path === item.href);
+    return !rule || rule.is_enabled;
+  });
 
   return (
     <nav className="w-56 bg-background border-r border-border min-h-[calc(100vh-4rem)] pt-6">
@@ -62,7 +74,7 @@ export function SideNav({ role }: SideNavProps) {
           <h2 className="mb-4 px-4 text-lg font-semibold tracking-tight">
             Navigation
           </h2>
-          {items.map((item) => (
+          {filteredItems.map((item) => (
             <Link
               key={item.href}
               to={item.href}

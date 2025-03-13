@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Briefcase, ClipboardList, Map, GraduationCap, BarChart3 } from "lucide-react";
+import { Briefcase, ClipboardCheck, Map, GraduationCap, BarChart3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { usePageAccess } from "@/contexts/PageAccessContext";
 
@@ -19,7 +19,7 @@ export function ManagerDashboard({ userData }: { userData: ProfileData | null })
   const isPageAccessible = (path: string) => {
     if (isLoading) return true; // Show all during loading
     const rule = accessRules.find(r => r.page_path === path);
-    return rule && rule.is_enabled;
+    return !rule || rule.is_enabled;
   };
 
   return (
@@ -57,7 +57,7 @@ export function ManagerDashboard({ userData }: { userData: ProfileData | null })
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <ClipboardList className="mr-2 h-5 w-5" />
+              <ClipboardCheck className="mr-2 h-5 w-5" />
               Applications
             </CardTitle>
             <CardDescription>
@@ -79,7 +79,7 @@ export function ManagerDashboard({ userData }: { userData: ProfileData | null })
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <ClipboardList className="mr-2 h-5 w-5" />
+              <ClipboardCheck className="mr-2 h-5 w-5" />
               Assessments
             </CardTitle>
             <CardDescription>
