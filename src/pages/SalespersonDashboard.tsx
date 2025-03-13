@@ -10,7 +10,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { Link } from "react-router-dom";
 import { Json } from "@/integrations/supabase/types";
 
-// Type that matches what's coming from Supabase
 interface SupabaseShopVisit {
   id: string;
   location: Json;
@@ -23,7 +22,6 @@ interface SupabaseShopVisit {
   updated_at: string;
 }
 
-// Type for our application's internal use
 interface ShopVisit {
   id: string;
   location: {
@@ -59,9 +57,7 @@ interface DailyStats {
   }
 }
 
-// Function to convert from Supabase type to our type
 const convertSupabaseVisit = (visit: SupabaseShopVisit): ShopVisit => {
-  // Parse the JSON location data
   let locationObj = typeof visit.location === 'string' 
     ? JSON.parse(visit.location) 
     : visit.location;
@@ -98,7 +94,6 @@ const SalespersonDashboard = () => {
     try {
       setIsLoading(true);
       
-      // Get current user's role
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
         toast({
@@ -124,7 +119,6 @@ const SalespersonDashboard = () => {
         return;
       }
       
-      // Fetch salespeople
       const { data: peopleData, error: peopleError } = await supabase
         .from('profiles')
         .select('id, full_name, email, avatar_url')
@@ -133,7 +127,6 @@ const SalespersonDashboard = () => {
       if (peopleError) throw peopleError;
       setSalespeople(peopleData as Salesperson[]);
       
-      // Calculate date range
       const today = new Date();
       let startDate = new Date();
       
@@ -145,11 +138,9 @@ const SalespersonDashboard = () => {
         startDate.setMonth(today.getMonth() - 1);
       }
       
-      // Convert dates to ISO strings
       const startDateStr = startDate.toISOString();
       const endDateStr = today.toISOString();
       
-      // Fetch recent shop visits
       const { data: visitsData, error: visitsError } = await supabase
         .from('shop_visits')
         .select(`
@@ -168,14 +159,12 @@ const SalespersonDashboard = () => {
         
       if (visitsError) throw visitsError;
       
-      // Convert the data to our application's format
       const convertedVisits = visitsData 
         ? visitsData.map(item => convertSupabaseVisit(item as SupabaseShopVisit)) 
         : [];
       
       setRecentVisits(convertedVisits);
       
-      // Generate daily stats
       const stats: DailyStats[] = [];
       const dateMap = new Map<string, DailyStats>();
       
@@ -216,7 +205,6 @@ const SalespersonDashboard = () => {
         });
       }
       
-      // Convert Map to array and sort by date
       dateMap.forEach(stat => stats.push(stat));
       stats.sort((a, b) => b.date.localeCompare(a.date));
       
@@ -235,7 +223,6 @@ const SalespersonDashboard = () => {
 
   const exportData = () => {
     try {
-      // Create CSV content
       let csvContent = "Date,Salesperson,Shop Name,Status,Has Recording\n";
       
       recentVisits.forEach(visit => {
@@ -246,7 +233,6 @@ const SalespersonDashboard = () => {
         csvContent += `${date},"${salespersonName}","${visit.shop_name}",${visit.status},${visit.audio_url ? 'Yes' : 'No'}\n`;
       });
       
-      // Create and download the file
       const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -317,21 +303,18 @@ const SalespersonDashboard = () => {
               
               <TabsContent value="today" className="mt-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Stats Cards */}
                   <StatsCards data={dailyStats} isLoading={isLoading} />
                 </div>
               </TabsContent>
               
               <TabsContent value="week" className="mt-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Stats Cards */}
                   <StatsCards data={dailyStats} isLoading={isLoading} />
                 </div>
               </TabsContent>
               
               <TabsContent value="month" className="mt-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Stats Cards */}
                   <StatsCards data={dailyStats} isLoading={isLoading} />
                 </div>
               </TabsContent>
@@ -422,14 +405,11 @@ const SalespersonDashboard = () => {
   );
 };
 
-// Stats Cards Component
 const StatsCards = ({ data, isLoading }: { data: DailyStats[]; isLoading: boolean }) => {
-  // Calculate total stats
   const totalVisits = data.reduce((sum, day) => sum + day.totalVisits, 0);
   const completedVisits = data.reduce((sum, day) => sum + day.completedVisits, 0);
   const recordingsCount = data.reduce((sum, day) => sum + day.hasRecordings, 0);
   
-  // Get top performing salespeople
   const salespeople: {[id: string]: { name: string, visits: number }} = {};
   
   data.forEach(day => {
@@ -553,7 +533,6 @@ const StatsCards = ({ data, isLoading }: { data: DailyStats[]; isLoading: boolea
   );
 };
 
-// Helper function to format date
 const formatDate = (dateString: string) => {
   const options: Intl.DateTimeFormatOptions = { 
     month: 'short', 
