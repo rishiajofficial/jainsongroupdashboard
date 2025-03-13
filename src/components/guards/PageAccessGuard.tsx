@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { UserRole } from "@/pages/DashboardPage";
 import { Card, CardContent } from "@/components/ui/card";
-import { Shield } from "lucide-react";
+import { Shield, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface PageAccessGuardProps {
@@ -91,6 +91,17 @@ export function PageAccessGuard({ children }: PageAccessGuardProps) {
     checkUserAccess();
   }, [location.pathname, navigate, hasAccess]);
   
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast.success("Logged out successfully");
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Failed to log out. Please try again.");
+    }
+  };
+  
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -123,6 +134,14 @@ export function PageAccessGuard({ children }: PageAccessGuardProps) {
                   className="w-full"
                 >
                   Go Back
+                </Button>
+                <Button 
+                  onClick={handleLogout}
+                  variant="destructive"
+                  className="w-full mt-2"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Log Out
                 </Button>
               </div>
             </div>
