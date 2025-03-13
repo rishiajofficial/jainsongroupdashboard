@@ -261,6 +261,36 @@ export type Database = {
           },
         ]
       }
+      page_access_rules: {
+        Row: {
+          allowed_roles: string[]
+          created_at: string
+          id: string
+          is_enabled: boolean
+          page_name: string
+          page_path: string
+          updated_at: string
+        }
+        Insert: {
+          allowed_roles: string[]
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          page_name: string
+          page_path: string
+          updated_at?: string
+        }
+        Update: {
+          allowed_roles?: string[]
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          page_name?: string
+          page_path?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
