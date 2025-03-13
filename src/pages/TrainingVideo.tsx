@@ -147,7 +147,7 @@ export default function TrainingVideo() {
         .update({
           watched_percentage: percentage,
           last_position: currentTime,
-          last_updated_at: new Date()
+          last_updated_at: new Date().toISOString()
         })
         .eq('id', userProgress.id)
         .select()
@@ -195,7 +195,7 @@ export default function TrainingVideo() {
           quiz_completed: true,
           quiz_score: score,
           completed: passed,
-          completed_at: passed ? new Date() : null
+          completed_at: passed ? new Date().toISOString() : null
         })
         .eq('id', userProgress.id)
         .select()

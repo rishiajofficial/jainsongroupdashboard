@@ -1,3 +1,4 @@
+
 import {
   Route,
   Routes,
@@ -5,7 +6,7 @@ import {
 import {
   QueryClient,
   QueryClientProvider,
-} from "react-query";
+} from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import Index from "@/pages/Index";
 import Signup from "@/pages/Signup";
@@ -57,7 +58,7 @@ function App() {
         <Route path="/salesperson-tracker" element={<SalespersonTracker />} />
         <Route path="/salesperson-dashboard" element={<SalespersonDashboard />} />
         
-        {/* New Training Routes */}
+        {/* Training Routes */}
         <Route path="/training" element={<TrainingVideos />} />
         <Route path="/training/video/:id" element={<TrainingVideo />} />
         <Route path="/training/manage" element={<TrainingManage />} />
