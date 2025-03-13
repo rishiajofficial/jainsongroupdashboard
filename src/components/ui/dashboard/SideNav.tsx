@@ -12,6 +12,7 @@ import {
   ShoppingBag,
   Users,
   UserCheck,
+  Settings2,
 } from 'lucide-react';
 import { UserRole } from '@/pages/DashboardPage';
 import { usePageAccess } from '@/contexts/PageAccessContext';
@@ -46,6 +47,7 @@ const navigationItems = {
     { href: "/admin/approvals", label: "Manager Approvals", icon: UserCheck },
     { href: "/admin/users", label: "User Management", icon: Users },
     { href: "/admin/page-access", label: "Page Access", icon: FileText },
+    { href: "/admin/dashboard-settings", label: "Dashboard Settings", icon: Settings2 },
     { href: "/admin/stats", label: "Platform Stats", icon: BarChart4 },
   ]
 };

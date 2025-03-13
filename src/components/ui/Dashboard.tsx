@@ -7,6 +7,7 @@ import { CandidateDashboard } from "@/components/dashboards/CandidateDashboard";
 import { SalespersonDashboard } from "@/components/dashboards/SalespersonDashboard";
 import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
 import { UserRole } from "@/pages/DashboardPage";
+import { DashboardSettingsProvider } from "@/contexts/DashboardSettingsContext";
 
 interface ProfileData {
   fullName: string;
@@ -77,35 +78,37 @@ export function Dashboard() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] animate-fade-up">
-      <div className="p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Dashboard Home</CardTitle>
-            <CardDescription>
-              {isLoading 
-                ? "Loading..." 
-                : userData 
-                  ? `Welcome back, ${userData.fullName || userData.email}` 
-                  : "Welcome to your dashboard"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex justify-center">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-              </div>
-            ) : (
-              <div>
-                <p className="text-muted-foreground mb-4">
-                  You are currently logged in as a <span className="font-semibold capitalize">{userData?.role || 'candidate'}</span>.
-                </p>
-                {renderRoleBasedContent()}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+    <DashboardSettingsProvider>
+      <div className="min-h-[calc(100vh-4rem)] animate-fade-up">
+        <div className="p-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Dashboard Home</CardTitle>
+              <CardDescription>
+                {isLoading 
+                  ? "Loading..." 
+                  : userData 
+                    ? `Welcome back, ${userData.fullName || userData.email}` 
+                    : "Welcome to your dashboard"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="flex justify-center">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                </div>
+              ) : (
+                <div>
+                  <p className="text-muted-foreground mb-4">
+                    You are currently logged in as a <span className="font-semibold capitalize">{userData?.role || 'candidate'}</span>.
+                  </p>
+                  {renderRoleBasedContent()}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </DashboardSettingsProvider>
   );
 }
