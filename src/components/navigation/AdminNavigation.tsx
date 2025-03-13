@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Shield } from "lucide-react";
+import { Shield, Users, Settings2, BarChart } from "lucide-react";
 
 interface AdminNavigationProps {
   variant: 'desktop' | 'mobile';
@@ -36,6 +36,33 @@ export function AdminNavigation({ variant, onClose = () => {} }: AdminNavigation
       >
         {isMobile && <Shield className="h-4 w-4 inline mr-2" />}
         Manager Approvals
+      </Link>
+      
+      <Link 
+        to="/admin/users" 
+        className={linkClass}
+        onClick={handleClick}
+      >
+        {isMobile && <Users className="h-4 w-4 inline mr-2" />}
+        User Management
+      </Link>
+      
+      <Link 
+        to="/admin/page-access" 
+        className={linkClass}
+        onClick={handleClick}
+      >
+        {isMobile && <Settings2 className="h-4 w-4 inline mr-2" />}
+        Page Access
+      </Link>
+      
+      <Link 
+        to="/admin/stats" 
+        className={linkClass}
+        onClick={handleClick}
+      >
+        {isMobile && <BarChart className="h-4 w-4 inline mr-2" />}
+        Platform Stats
       </Link>
     </div>
   );

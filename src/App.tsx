@@ -9,6 +9,8 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { PageAccessProvider } from "@/contexts/PageAccessContext";
+import { PageAccessGuard } from "@/components/guards/PageAccessGuard";
 import Index from "@/pages/Index";
 import Signup from "@/pages/Signup";
 import Login from "@/pages/Login";
@@ -25,6 +27,8 @@ import EditAssessmentTemplate from "@/pages/EditAssessmentTemplate";
 import CandidateAssessments from "@/pages/CandidateAssessments";
 import AssignAssessment from "@/pages/AssignAssessment";
 import AdminApprovals from "@/pages/AdminApprovals";
+import AdminUsers from "@/pages/AdminUsers";
+import AdminPageAccess from "@/pages/AdminPageAccess";
 import JobApplicationPage from "@/pages/JobApplicationPage";
 import SalespersonTracker from "@/pages/SalespersonTracker";
 import SalespersonDashboard from "@/pages/SalespersonDashboard";
@@ -39,34 +43,40 @@ function App() {
   return (
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="*" element={<NotFound />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/applications" element={<Applications />} />
-          <Route path="/jobs" element={<Jobs />} />
-          <Route path="/jobs/manage" element={<JobsManage />} />
-          <Route path="/applications/review" element={<ApplicationsReview />} />
-          <Route path="/profile" element={<UserProfile />} />
-          <Route path="/assessments/templates" element={<AssessmentTemplates />} />
-          <Route path="/assessments/templates/edit/:id" element={<EditAssessmentTemplate />} />
-          <Route path="/assessments/candidate" element={<CandidateAssessments />} />
-          <Route path="/assessments/assign" element={<AssignAssessment />} />
-          <Route path="/admin/approvals" element={<AdminApprovals />} />
-          <Route path="/jobs/:id/apply" element={<JobApplicationPage />} />
-          <Route path="/salesperson-tracker" element={<SalespersonTracker />} />
-          <Route path="/salesperson-dashboard" element={<SalespersonDashboard />} />
-          
-          {/* Training Routes */}
-          <Route path="/training" element={<TrainingVideos />} />
-          <Route path="/training/video/:id" element={<TrainingVideo />} />
-          <Route path="/training/manage" element={<TrainingManage />} />
-          <Route path="/training/performance" element={<TrainingPerformance />} />
-        </Routes>
-        <Toaster />
+        <PageAccessProvider>
+          <PageAccessGuard>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="*" element={<NotFound />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/applications" element={<Applications />} />
+              <Route path="/jobs" element={<Jobs />} />
+              <Route path="/jobs/manage" element={<JobsManage />} />
+              <Route path="/applications/review" element={<ApplicationsReview />} />
+              <Route path="/profile" element={<UserProfile />} />
+              <Route path="/assessments/templates" element={<AssessmentTemplates />} />
+              <Route path="/assessments/templates/edit/:id" element={<EditAssessmentTemplate />} />
+              <Route path="/assessments/candidate" element={<CandidateAssessments />} />
+              <Route path="/assessments/assign" element={<AssignAssessment />} />
+              <Route path="/admin/approvals" element={<AdminApprovals />} />
+              <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/page-access" element={<AdminPageAccess />} />
+              <Route path="/jobs/:id/apply" element={<JobApplicationPage />} />
+              <Route path="/salesperson-tracker" element={<SalespersonTracker />} />
+              <Route path="/salesperson-dashboard" element={<SalespersonDashboard />} />
+              
+              {/* Training Routes */}
+              <Route path="/training" element={<TrainingVideos />} />
+              <Route path="/training/video/:id" element={<TrainingVideo />} />
+              <Route path="/training/manage" element={<TrainingManage />} />
+              <Route path="/training/performance" element={<TrainingPerformance />} />
+            </Routes>
+          </PageAccessGuard>
+          <Toaster />
+        </PageAccessProvider>
       </QueryClientProvider>
     </BrowserRouter>
   );
