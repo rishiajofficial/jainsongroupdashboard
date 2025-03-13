@@ -24,12 +24,11 @@ import {
   StopCircle,
   Save
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Json } from "@/integrations/supabase/types";
 
-// Type that matches what's coming from Supabase
 interface SupabaseShopVisit {
   id: string;
   location: Json;
@@ -42,7 +41,6 @@ interface SupabaseShopVisit {
   updated_at: string;
 }
 
-// Type for our application's internal use
 interface ShopVisit {
   id: string;
   location: {
@@ -58,9 +56,7 @@ interface ShopVisit {
   status: 'pending' | 'completed' | 'failed';
 }
 
-// Function to convert from Supabase type to our type
 const convertSupabaseVisit = (visit: SupabaseShopVisit): ShopVisit => {
-  // Parse the JSON location data
   let locationObj = typeof visit.location === 'string' 
     ? JSON.parse(visit.location) 
     : visit.location;
@@ -96,10 +92,8 @@ export default function SalespersonTracker() {
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    // Get geolocation on component mount
     handleGeolocation();
 
-    // Clean up media recorder on unmount
     return () => {
       if (mediaRecorder && mediaRecorder.state === 'recording') {
         mediaRecorder.stop();
@@ -117,7 +111,6 @@ export default function SalespersonTracker() {
           const { latitude, longitude } = position.coords;
           setLocation({ latitude, longitude });
 
-          // Reverse geocode to get address
           try {
             const response = await fetch(
               `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`
@@ -177,7 +170,6 @@ export default function SalespersonTracker() {
     } catch (error) {
       console.error("Error starting recording:", error);
       toast({
-        title: "Recording failed",
         description: "Please allow microphone access",
         variant: "destructive",
       });
@@ -195,7 +187,6 @@ export default function SalespersonTracker() {
     try {
       if (!location) {
         toast({
-          title: "Location required",
           description: "Please enable location services",
           variant: "destructive",
         });
@@ -204,7 +195,6 @@ export default function SalespersonTracker() {
 
       if (!shopName) {
         toast({
-          title: "Shop name required",
           description: "Please enter the shop name",
           variant: "destructive",
         });
@@ -213,12 +203,10 @@ export default function SalespersonTracker() {
 
       let audio_url = null;
       if (audioURL) {
-        // Convert audioURL (blob URL) to a File object
         const response = await fetch(audioURL);
         const blob = await response.blob();
         const audioFile = new File([blob], "sales_pitch.webm", { type: "audio/webm" });
 
-        // Upload audio to Supabase storage
         const { data, error } = await supabase.storage
           .from('shop_visit_recordings')
           .upload(`audio/${Date.now()}_${audioFile.name}`, audioFile, {
@@ -230,11 +218,9 @@ export default function SalespersonTracker() {
         audio_url = supabase.storage.from('shop_visit_recordings').getPublicUrl(data.path).data.publicUrl;
       }
 
-      // Save shop visit data to Supabase
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
         toast({
-          title: "Authentication required",
           description: "Please log in to save the shop visit",
           variant: "destructive",
         });
@@ -257,14 +243,12 @@ export default function SalespersonTracker() {
       if (insertError) throw insertError;
 
       toast({
-        title: "Shop visit saved",
         description: "Your shop visit has been saved successfully",
       });
       navigate("/dashboard");
     } catch (error) {
       console.error("Error saving shop visit:", error);
       toast({
-        title: "Save failed",
         description: "Could not save shop visit",
         variant: "destructive",
       });
@@ -276,7 +260,6 @@ export default function SalespersonTracker() {
   return isMobile ? (
     <MobileLayout title="Track Shop Visit" backLink="/dashboard">
       <div className="space-y-6">
-        {/* Location Card */}
         <Card className="animate-fade-up">
           <CardHeader>
             <CardTitle>Current Location</CardTitle>
@@ -326,7 +309,6 @@ export default function SalespersonTracker() {
           </CardContent>
         </Card>
         
-        {/* Shop Information Card */}
         <Card className="animate-fade-up">
           <CardHeader>
             <CardTitle>Shop Information</CardTitle>
@@ -354,7 +336,6 @@ export default function SalespersonTracker() {
           </CardContent>
         </Card>
         
-        {/* Audio Recording Card */}
         <Card className="animate-fade-up">
           <CardHeader>
             <CardTitle>Sales Pitch Recording</CardTitle>
@@ -392,7 +373,6 @@ export default function SalespersonTracker() {
           </CardContent>
         </Card>
         
-        {/* Submit Button */}
         <Button 
           className="w-full mt-4" 
           size="lg"
@@ -424,7 +404,6 @@ export default function SalespersonTracker() {
           </div>
           
           <div className="space-y-6">
-            {/* Location Card */}
             <Card>
               <CardHeader>
                 <CardTitle>Current Location</CardTitle>
@@ -474,7 +453,6 @@ export default function SalespersonTracker() {
               </CardContent>
             </Card>
             
-            {/* Shop Information Card */}
             <Card>
               <CardHeader>
                 <CardTitle>Shop Information</CardTitle>
@@ -502,7 +480,6 @@ export default function SalespersonTracker() {
               </CardContent>
             </Card>
             
-            {/* Audio Recording Card */}
             <Card>
               <CardHeader>
                 <CardTitle>Sales Pitch Recording</CardTitle>
@@ -540,7 +517,6 @@ export default function SalespersonTracker() {
               </CardContent>
             </Card>
             
-            {/* Submit Button */}
             <div className="flex justify-end">
               <Button 
                 onClick={saveShopVisit}
