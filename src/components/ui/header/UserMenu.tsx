@@ -17,7 +17,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-type UserRole = 'candidate' | 'manager' | 'admin';
+type UserRole = 'candidate' | 'salesperson' | 'manager' | 'admin';
 
 interface UserData {
   email?: string;
@@ -37,6 +37,8 @@ const getRoleBadgeVariant = (role: UserRole) => {
       return 'destructive';
     case 'manager':
       return 'default';
+    case 'salesperson':
+      return 'warning';
     case 'candidate':
     default:
       return 'secondary';
@@ -74,9 +76,13 @@ export function UserMenu({ user, onLogout }: UserMenuProps) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+                  <User className="h-4 w-4 mr-2" />
+                  Dashboard
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/user-profile")}>
                   <User className="h-4 w-4 mr-2" />
-                  User Profile
+                  Profile
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/settings")}>
                   <Settings className="h-4 w-4 mr-2" />
@@ -91,7 +97,7 @@ export function UserMenu({ user, onLogout }: UserMenuProps) {
             </DropdownMenu>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Profile</p>
+            <p>Account</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

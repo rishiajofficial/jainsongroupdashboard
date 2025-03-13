@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Header } from "@/components/ui/header";
 import { Sidebar } from "@/components/ui/sidebar";
@@ -97,8 +98,7 @@ const SalespersonDashboard = () => {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
         toast({
-          title: "Authentication required",
-          description: "Please log in to view the dashboard",
+          description: "Authentication required. Please log in to view the dashboard",
           variant: "destructive",
         });
         return;
@@ -112,8 +112,7 @@ const SalespersonDashboard = () => {
         
       if (profileData?.role !== 'manager' && profileData?.role !== 'admin') {
         toast({
-          title: "Access denied",
-          description: "Only managers can access this dashboard",
+          description: "Access denied. Only managers can access this dashboard",
           variant: "destructive",
         });
         return;
@@ -122,7 +121,7 @@ const SalespersonDashboard = () => {
       const { data: peopleData, error: peopleError } = await supabase
         .from('profiles')
         .select('id, full_name, email, avatar_url')
-        .in('role', ['candidate']);
+        .in('role', ['salesperson']);
         
       if (peopleError) throw peopleError;
       setSalespeople(peopleData as Salesperson[]);
@@ -212,7 +211,6 @@ const SalespersonDashboard = () => {
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast({
-        title: "Error",
         description: "Failed to load dashboard data",
         variant: "destructive",
       });
@@ -245,7 +243,6 @@ const SalespersonDashboard = () => {
     } catch (error) {
       console.error('Error exporting data:', error);
       toast({
-        title: "Export failed",
         description: "Could not export visit data",
         variant: "destructive",
       });
@@ -533,6 +530,7 @@ const StatsCards = ({ data, isLoading }: { data: DailyStats[]; isLoading: boolea
   );
 };
 
+// Helper function to format dates correctly
 const formatDate = (dateString: string) => {
   const options: Intl.DateTimeFormatOptions = { 
     month: 'short', 

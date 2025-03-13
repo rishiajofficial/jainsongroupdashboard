@@ -4,9 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { supabase } from "@/integrations/supabase/client";
 import { ManagerDashboard } from "@/components/dashboards/ManagerDashboard";
 import { CandidateDashboard } from "@/components/dashboards/CandidateDashboard";
+import { SalespersonDashboard } from "@/components/dashboards/SalespersonDashboard";
 import { AdminDashboard } from "@/components/dashboards/AdminDashboard";
+import { SideNav } from "@/components/ui/dashboard/SideNav";
 
-type UserRole = 'candidate' | 'manager' | 'admin';
+type UserRole = 'candidate' | 'salesperson' | 'manager' | 'admin';
 
 interface ProfileData {
   fullName: string;
@@ -67,6 +69,9 @@ export function Dashboard() {
       case 'manager':
         return <ManagerDashboard userData={userData} />;
         
+      case 'salesperson':
+        return <SalespersonDashboard userData={userData} />;
+        
       case 'candidate':
       default:
         return <CandidateDashboard userData={userData} />;
@@ -74,43 +79,47 @@ export function Dashboard() {
   };
 
   return (
-    <div className="space-y-8 animate-fade-up">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Welcome to HiringDash</h2>
-        <p className="text-muted-foreground">
-          {userData?.role === 'candidate' ? 'Find your next opportunity' : 
-           userData?.role === 'manager' ? 'Manage your hiring process efficiently' :
-           'Administer the hiring platform'}
-        </p>
-      </div>
+    <div className="min-h-[calc(100vh-4rem)] flex animate-fade-up">
+      {userData && <SideNav role={userData.role} />}
+      <div className="flex-1 p-6">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Welcome to HiringDash</h2>
+          <p className="text-muted-foreground">
+            {userData?.role === 'candidate' ? 'Find your next opportunity' : 
+             userData?.role === 'salesperson' ? 'Track your sales visits' :
+             userData?.role === 'manager' ? 'Manage your hiring process efficiently' :
+             'Administer the hiring platform'}
+          </p>
+        </div>
 
-      {/* Welcome Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Dashboard Home</CardTitle>
-          <CardDescription>
-            {isLoading 
-              ? "Loading..." 
-              : userData 
-                ? `Welcome back, ${userData.fullName || userData.email}` 
-                : "Welcome to your dashboard"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-            </div>
-          ) : (
-            <div>
-              <p className="text-muted-foreground mb-4">
-                You are currently logged in as a <span className="font-semibold capitalize">{userData?.role || 'candidate'}</span>.
-              </p>
-              {renderRoleBasedContent()}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        {/* Welcome Card */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Dashboard Home</CardTitle>
+            <CardDescription>
+              {isLoading 
+                ? "Loading..." 
+                : userData 
+                  ? `Welcome back, ${userData.fullName || userData.email}` 
+                  : "Welcome to your dashboard"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+              </div>
+            ) : (
+              <div>
+                <p className="text-muted-foreground mb-4">
+                  You are currently logged in as a <span className="font-semibold capitalize">{userData?.role || 'candidate'}</span>.
+                </p>
+                {renderRoleBasedContent()}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

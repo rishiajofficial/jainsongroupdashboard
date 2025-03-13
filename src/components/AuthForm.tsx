@@ -18,7 +18,7 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState<"candidate" | "manager" | "admin">("candidate");
+  const [role, setRole] = useState<"candidate" | "salesperson" | "manager" | "admin">("candidate");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -40,6 +40,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         toast.success("Logged in successfully!");
         navigate("/dashboard");
       } else {
+        console.log("Signing up with role:", role);
         // Sign up with Supabase
         const { error } = await supabase.auth.signUp({
           email,
@@ -99,12 +100,16 @@ export function AuthForm({ mode }: AuthFormProps) {
                 <Label>User Role</Label>
                 <RadioGroup 
                   value={role} 
-                  onValueChange={(value) => setRole(value as "candidate" | "manager" | "admin")}
+                  onValueChange={(value) => setRole(value as "candidate" | "salesperson" | "manager" | "admin")}
                   className="flex flex-col space-y-2 mt-2"
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="candidate" id="candidate" />
-                    <Label htmlFor="candidate" className="cursor-pointer">Candidate / Salesperson</Label>
+                    <Label htmlFor="candidate" className="cursor-pointer">Candidate / Job Seeker</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="salesperson" id="salesperson" />
+                    <Label htmlFor="salesperson" className="cursor-pointer">Salesperson</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="manager" id="manager" />

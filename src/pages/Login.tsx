@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthForm } from "@/components/AuthForm";
 import { Header } from "@/components/ui/Header";
+import { Footer } from "@/components/ui/Footer";
 import { supabase } from "@/integrations/supabase/client";
 
 const Login = () => {
@@ -59,6 +60,7 @@ const Login = () => {
         <main className="flex-1 flex items-center justify-center">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </main>
+        <Footer />
       </div>
     );
   }
@@ -71,6 +73,7 @@ const Login = () => {
           <AuthForm mode="login" />
         </div>
       </main>
+      <Footer />
     </div>
   );
 };
