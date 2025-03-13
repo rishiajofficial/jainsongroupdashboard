@@ -2,6 +2,7 @@
 import {
   Route,
   Routes,
+  BrowserRouter
 } from "react-router-dom";
 import {
   QueryClient,
@@ -36,36 +37,38 @@ const queryClient = new QueryClient();
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="*" element={<NotFound />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/applications" element={<Applications />} />
-        <Route path="/jobs" element={<Jobs />} />
-        <Route path="/jobs/manage" element={<JobsManage />} />
-        <Route path="/applications/review" element={<ApplicationsReview />} />
-        <Route path="/profile" element={<UserProfile />} />
-        <Route path="/assessments/templates" element={<AssessmentTemplates />} />
-        <Route path="/assessments/templates/edit/:id" element={<EditAssessmentTemplate />} />
-        <Route path="/assessments/candidate" element={<CandidateAssessments />} />
-        <Route path="/assessments/assign" element={<AssignAssessment />} />
-        <Route path="/admin/approvals" element={<AdminApprovals />} />
-        <Route path="/jobs/:id/apply" element={<JobApplicationPage />} />
-        <Route path="/salesperson-tracker" element={<SalespersonTracker />} />
-        <Route path="/salesperson-dashboard" element={<SalespersonDashboard />} />
-        
-        {/* Training Routes */}
-        <Route path="/training" element={<TrainingVideos />} />
-        <Route path="/training/video/:id" element={<TrainingVideo />} />
-        <Route path="/training/manage" element={<TrainingManage />} />
-        <Route path="/training/performance" element={<TrainingPerformance />} />
-      </Routes>
-      <Toaster />
-    </QueryClientProvider>
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="*" element={<NotFound />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/applications" element={<Applications />} />
+          <Route path="/jobs" element={<Jobs />} />
+          <Route path="/jobs/manage" element={<JobsManage />} />
+          <Route path="/applications/review" element={<ApplicationsReview />} />
+          <Route path="/profile" element={<UserProfile />} />
+          <Route path="/assessments/templates" element={<AssessmentTemplates />} />
+          <Route path="/assessments/templates/edit/:id" element={<EditAssessmentTemplate />} />
+          <Route path="/assessments/candidate" element={<CandidateAssessments />} />
+          <Route path="/assessments/assign" element={<AssignAssessment />} />
+          <Route path="/admin/approvals" element={<AdminApprovals />} />
+          <Route path="/jobs/:id/apply" element={<JobApplicationPage />} />
+          <Route path="/salesperson-tracker" element={<SalespersonTracker />} />
+          <Route path="/salesperson-dashboard" element={<SalespersonDashboard />} />
+          
+          {/* Training Routes */}
+          <Route path="/training" element={<TrainingVideos />} />
+          <Route path="/training/video/:id" element={<TrainingVideo />} />
+          <Route path="/training/manage" element={<TrainingManage />} />
+          <Route path="/training/performance" element={<TrainingPerformance />} />
+        </Routes>
+        <Toaster />
+      </QueryClientProvider>
+    </BrowserRouter>
   );
 }
 
