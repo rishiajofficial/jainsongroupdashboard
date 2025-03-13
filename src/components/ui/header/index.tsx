@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { toast } from "sonner";
@@ -97,6 +98,8 @@ export function Header() {
 
   const handleLogout = async () => {
     try {
+      console.log("Logging out...");
+      
       // First clear all local storage related to authentication
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('supabase.') || key.includes('supabase')) {
@@ -104,7 +107,7 @@ export function Header() {
         }
       });
       
-      // Then sign out from Supabase
+      // Then sign out from Supabase with global scope
       const { error } = await supabase.auth.signOut({ scope: 'global' });
       
       if (error) throw error;

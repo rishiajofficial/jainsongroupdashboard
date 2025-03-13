@@ -131,17 +131,23 @@ export function PageAccessGuard({ children }: PageAccessGuardProps) {
   
   const handleLogout = async () => {
     try {
+      console.log("Logging out from PageAccessGuard...");
+      
       // First clear all local storage related to authentication
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('supabase.') || key.includes('supabase')) {
+          console.log(`Removing key: ${key}`);
           localStorage.removeItem(key);
         }
       });
       
-      // Then sign out from Supabase
+      // Then sign out from Supabase with global scope
       const { error } = await supabase.auth.signOut({ scope: 'global' });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase signOut error:", error);
+        throw error;
+      }
       
       toast.success("Logged out successfully");
       

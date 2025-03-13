@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthForm } from "@/components/AuthForm";
@@ -9,17 +10,18 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Clear any potentially stale auth data on page load
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('supabase.') || key.includes('supabase')) {
+        localStorage.removeItem(key);
+      }
+    });
+    
     // Check if user is already authenticated
     const checkAuth = async () => {
       try {
-        // Clear any potentially stale auth data
+        // If there was an auth error in the URL, clear local storage
         if (window.location.href.includes('?error=')) {
-          // If there was an auth error in the URL, clear local storage
-          Object.keys(localStorage).forEach(key => {
-            if (key.startsWith('supabase.') || key.includes('supabase')) {
-              localStorage.removeItem(key);
-            }
-          });
           setIsLoading(false);
           return;
         }
@@ -48,6 +50,7 @@ const Login = () => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log("Auth state changed in Login:", event, session);
         if (event === 'SIGNED_IN' && session) {
           navigate("/dashboard");
         }
