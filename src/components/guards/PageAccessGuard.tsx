@@ -19,7 +19,6 @@ export function PageAccessGuard({ children }: PageAccessGuardProps) {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { hasAccess, accessRules } = usePageAccess();
   
   useEffect(() => {
     const checkUserAccess = async () => {
@@ -70,26 +69,31 @@ export function PageAccessGuard({ children }: PageAccessGuardProps) {
           return;
         }
         
-        // Dashboard is always accessible to logged in users
-        if (location.pathname === '/dashboard') {
+        // Always allow access to dashboard and user profile routes
+        if (location.pathname === '/dashboard' || 
+            location.pathname === '/profile' || 
+            location.pathname === '/settings') {
           setIsAuthorized(true);
           setIsLoading(false);
           return;
         }
         
-        // Always allow admins access to all pages
+        // Admin always has access to all pages
         if (role === 'admin') {
           setIsAuthorized(true);
           setIsLoading(false);
           return;
         }
         
-        // For non-admins, check if they have access to this page
-        const canAccess = hasAccess(location.pathname, role);
-        setIsAuthorized(canAccess);
+        // For other pages, check if the current role has access
+        const hasPageAccess = checkRoleAccess(location.pathname, role);
+        setIsAuthorized(hasPageAccess);
         
-        if (!canAccess) {
-          toast.error("You don't have permission to access this page");
+        if (!hasPageAccess) {
+          // Only display toast for intentional navigation, not on initial load
+          if (location.key !== 'default') {
+            toast.error("You don't have permission to access this page");
+          }
         }
       } catch (error) {
         console.error("Access check error:", error);
@@ -99,8 +103,36 @@ export function PageAccessGuard({ children }: PageAccessGuardProps) {
       }
     };
     
+    // Helper function to check if a role has access to a page
+    const checkRoleAccess = (path: string, role: UserRole | null): boolean => {
+      if (!role) return false;
+      
+      // These base paths are allowed for all authenticated users
+      const universalAuthPaths = ['/dashboard', '/profile', '/settings'];
+      if (universalAuthPaths.includes(path)) return true;
+      
+      // Based on role, define accessible paths
+      const rolePaths: Record<UserRole, string[]> = {
+        admin: [], // Admin has access to everything
+        manager: [
+          '/jobs/manage', '/applications/review', '/assessments/templates',
+          '/assessments/assign', '/salesperson-dashboard', '/training/manage',
+          '/training/performance'
+        ],
+        salesperson: [
+          '/salesperson-tracker', '/salesperson-stats', '/training'
+        ],
+        candidate: [
+          '/jobs', '/applications', '/assessments/candidate'
+        ]
+      };
+      
+      // Check role-specific paths
+      return role === 'admin' || rolePaths[role]?.some(allowedPath => path.startsWith(allowedPath)) || false;
+    };
+    
     checkUserAccess();
-  }, [location.pathname, navigate, hasAccess]);
+  }, [location.pathname, location.key, navigate]);
   
   const handleLogout = async () => {
     try {

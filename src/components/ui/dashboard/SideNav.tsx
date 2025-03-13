@@ -14,7 +14,6 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { UserRole } from '@/pages/DashboardPage';
-import { usePageAccess } from '@/contexts/PageAccessContext';
 
 // Define navigation items by user role
 const navigationItems = {
@@ -54,34 +53,7 @@ interface SideNavProps {
 
 export function SideNav({ role }: SideNavProps) {
   const location = useLocation();
-  const { accessRules, isLoading } = usePageAccess();
   const items = navigationItems[role] || navigationItems.candidate;
-
-  // Filter navigation items based on page access rules
-  const filteredItems = items.filter(item => {
-    // Always show dashboard
-    if (item.href === "/dashboard") return true;
-    
-    // If we're an admin, show everything (but still check if the page is enabled)
-    if (role === 'admin') {
-      // For admin, check if the page is enabled in access rules
-      if (isLoading) return true;
-      
-      const rule = accessRules.find(r => r.page_path === item.href);
-      return !rule || rule.is_enabled; // Show if no rule or if enabled
-    }
-    
-    // For non-admins, check if page is enabled in access rules
-    if (isLoading) return true; // Show all items while loading
-    
-    const rule = accessRules.find(r => r.page_path === item.href);
-    
-    // If rule doesn't exist or is disabled, don't show the navigation item
-    if (!rule || !rule.is_enabled) return false;
-    
-    // Check if the user's role is allowed for this page
-    return rule.allowed_roles.includes(role);
-  });
 
   return (
     <nav className="w-56 bg-background border-r border-border min-h-[calc(100vh-4rem)] pt-6">
@@ -90,7 +62,7 @@ export function SideNav({ role }: SideNavProps) {
           <h2 className="mb-4 px-4 text-lg font-semibold tracking-tight">
             Navigation
           </h2>
-          {filteredItems.map((item) => (
+          {items.map((item) => (
             <Link
               key={item.href}
               to={item.href}
