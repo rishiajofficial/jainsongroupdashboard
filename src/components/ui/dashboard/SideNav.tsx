@@ -14,6 +14,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { UserRole } from '@/pages/DashboardPage';
+import { usePageAccess } from '@/contexts/PageAccessContext';
 
 // Define navigation items by user role
 const navigationItems = {
@@ -21,7 +22,7 @@ const navigationItems = {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/jobs", label: "Browse Jobs", icon: Briefcase },
     { href: "/applications", label: "My Applications", icon: FileText },
-    { href: "/assessments/candidate", label: "My Assessments", icon: ClipboardCheck },
+    { href: "/assessments/candidate", label: "My Assessments", icon: ClipboardList },
   ],
   salesperson: [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -53,7 +54,28 @@ interface SideNavProps {
 
 export function SideNav({ role }: SideNavProps) {
   const location = useLocation();
+  const { hasAccess, accessRules, isLoading } = usePageAccess();
   const items = navigationItems[role] || navigationItems.candidate;
+
+  // Filter navigation items based on page access rules
+  const filteredItems = items.filter(item => {
+    // Always show dashboard
+    if (item.href === "/dashboard") return true;
+    
+    // If we're an admin, show everything
+    if (role === 'admin') return true;
+    
+    // Check if page is enabled in access rules
+    if (isLoading) return true; // Show all items while loading
+    
+    const rule = accessRules.find(r => r.page_path === item.href);
+    
+    // If rule doesn't exist or is disabled, don't show the navigation item
+    if (!rule || !rule.is_enabled) return false;
+    
+    // Check if the user's role is allowed for this page
+    return rule.allowed_roles.includes(role);
+  });
 
   return (
     <nav className="w-56 bg-background border-r border-border min-h-[calc(100vh-4rem)] pt-6">
@@ -62,7 +84,7 @@ export function SideNav({ role }: SideNavProps) {
           <h2 className="mb-4 px-4 text-lg font-semibold tracking-tight">
             Navigation
           </h2>
-          {items.map((item) => (
+          {filteredItems.map((item) => (
             <Link
               key={item.href}
               to={item.href}

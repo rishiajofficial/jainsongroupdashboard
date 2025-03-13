@@ -1,6 +1,7 @@
 
 import { Link } from "react-router-dom";
 import { Briefcase, FileText, Map } from "lucide-react";
+import { usePageAccess } from "@/contexts/PageAccessContext";
 
 interface CandidateNavigationProps {
   variant: 'desktop' | 'mobile';
@@ -9,6 +10,7 @@ interface CandidateNavigationProps {
 
 export function CandidateNavigation({ variant, onClose = () => {} }: CandidateNavigationProps) {
   const isMobile = variant === 'mobile';
+  const { accessRules, isLoading } = usePageAccess();
   
   const linkClass = isMobile 
     ? "block py-2 text-sm font-medium transition-colors hover:text-primary"
@@ -16,6 +18,13 @@ export function CandidateNavigation({ variant, onClose = () => {} }: CandidateNa
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (isMobile) onClose();
+  };
+  
+  // Check if a page is accessible (enabled)
+  const isPageAccessible = (path: string) => {
+    if (isLoading) return true; // Show all during loading
+    const rule = accessRules.find(r => r.page_path === path);
+    return rule && rule.is_enabled;
   };
 
   return (
@@ -29,41 +38,49 @@ export function CandidateNavigation({ variant, onClose = () => {} }: CandidateNa
         Dashboard
       </Link>
       
-      <Link 
-        to="/jobs" 
-        className={linkClass}
-        onClick={handleClick}
-      >
-        {isMobile && <Briefcase className="h-4 w-4 inline mr-2" />}
-        Browse Jobs
-      </Link>
+      {isPageAccessible("/jobs") && (
+        <Link 
+          to="/jobs" 
+          className={linkClass}
+          onClick={handleClick}
+        >
+          {isMobile && <Briefcase className="h-4 w-4 inline mr-2" />}
+          Browse Jobs
+        </Link>
+      )}
       
-      <Link 
-        to="/applications" 
-        className={linkClass}
-        onClick={handleClick}
-      >
-        {isMobile && <FileText className="h-4 w-4 inline mr-2" />}
-        My Applications
-      </Link>
+      {isPageAccessible("/applications") && (
+        <Link 
+          to="/applications" 
+          className={linkClass}
+          onClick={handleClick}
+        >
+          {isMobile && <FileText className="h-4 w-4 inline mr-2" />}
+          My Applications
+        </Link>
+      )}
       
-      <Link 
-        to="/assessments/candidate" 
-        className={linkClass}
-        onClick={handleClick}
-      >
-        {isMobile && <FileText className="h-4 w-4 inline mr-2" />}
-        My Assessments
-      </Link>
+      {isPageAccessible("/assessments/candidate") && (
+        <Link 
+          to="/assessments/candidate" 
+          className={linkClass}
+          onClick={handleClick}
+        >
+          {isMobile && <FileText className="h-4 w-4 inline mr-2" />}
+          My Assessments
+        </Link>
+      )}
       
-      <Link 
-        to="/salesperson-tracker" 
-        className={linkClass}
-        onClick={handleClick}
-      >
-        {isMobile && <Map className="h-4 w-4 inline mr-2" />}
-        Track Visits
-      </Link>
+      {isPageAccessible("/salesperson-tracker") && (
+        <Link 
+          to="/salesperson-tracker" 
+          className={linkClass}
+          onClick={handleClick}
+        >
+          {isMobile && <Map className="h-4 w-4 inline mr-2" />}
+          Track Visits
+        </Link>
+      )}
     </div>
   );
 }

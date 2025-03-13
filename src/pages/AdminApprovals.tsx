@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/ui/Header";
@@ -151,8 +150,8 @@ const AdminApprovals = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
-        return <Badge variant="success" className="flex items-center gap-1">
-          <CheckCircle className="h-3 w-3" /> Approved
+        return <Badge variant="default" className="ml-1 capitalize">
+          Approved
         </Badge>;
       case 'rejected':
         return <Badge variant="destructive" className="flex items-center gap-1">
