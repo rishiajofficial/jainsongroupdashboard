@@ -146,6 +146,7 @@ const SalespersonDashboard = () => {
         startDate.setMonth(today.getMonth() - 1);
       }
       
+      // Convert dates to ISO strings
       const startDateStr = startDate.toISOString();
       const endDateStr = today.toISOString();
       
@@ -301,7 +302,7 @@ const SalespersonDashboard = () => {
                 
                 <Button asChild>
                   <Link to="/salesperson-tracker">
-                    <Store className="mr-2 h-4 w-4" />
+                    <Map className="mr-2 h-4 w-4" />
                     New Shop Visit
                   </Link>
                 </Button>
