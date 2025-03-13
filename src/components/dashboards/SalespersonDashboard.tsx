@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Briefcase, ClipboardList, Map } from "lucide-react";
+import { Briefcase, ClipboardList, Map, GraduationCap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { UserRole } from "@/pages/DashboardPage";
 
@@ -54,6 +54,27 @@ export function SalespersonDashboard({ userData }: { userData: ProfileData | nul
             className="w-full sm:w-auto"
           >
             View My Statistics
+          </Button>
+        </CardContent>
+      </Card>
+      
+      {/* New Training Videos Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <GraduationCap className="mr-2 h-5 w-5" />
+            Training Videos
+          </CardTitle>
+          <CardDescription>
+            Access training materials and complete quizzes
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button 
+            onClick={() => navigate("/training")} 
+            className="w-full sm:w-auto"
+          >
+            View Training Videos
           </Button>
         </CardContent>
       </Card>

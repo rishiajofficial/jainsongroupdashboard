@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Bell, Briefcase, ClipboardList, Map, Shield, User, Settings } from "lucide-react";
+import { Bell, Briefcase, ClipboardList, GraduationCap, Map, Shield, User, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useUnreadApplications } from "@/hooks/useUnreadApplications";
@@ -87,6 +87,16 @@ export function ManagerNavigation({ variant, onClose = () => {} }: ManagerNaviga
       >
         {isMobile && <Map className="h-4 w-4 inline mr-2" />}
         Sales Tracking
+      </Link>
+      
+      {/* New Training Management Link */}
+      <Link 
+        to="/training/manage" 
+        className={linkClass}
+        onClick={handleClick}
+      >
+        {isMobile && <GraduationCap className="h-4 w-4 inline mr-2" />}
+        Training Management
       </Link>
     </div>
   );

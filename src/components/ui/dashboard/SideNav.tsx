@@ -6,6 +6,7 @@ import {
   Briefcase,
   ClipboardCheck,
   FileText,
+  GraduationCap,
   LayoutDashboard,
   Map,
   ShoppingBag,
@@ -26,6 +27,7 @@ const navigationItems = {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/salesperson-tracker", label: "Record a Visit", icon: Map },
     { href: "/salesperson-stats", label: "My Stats", icon: BarChart4 },
+    { href: "/training", label: "Training Videos", icon: GraduationCap },
   ],
   manager: [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -33,6 +35,8 @@ const navigationItems = {
     { href: "/jobs/manage", label: "Manage Jobs", icon: Briefcase },
     { href: "/salesperson-dashboard", label: "Review Salespersons", icon: Users },
     { href: "/manager-stats", label: "Statistics", icon: BarChart4 },
+    { href: "/training/manage", label: "Manage Training", icon: GraduationCap },
+    { href: "/training/performance", label: "Training Performance", icon: ClipboardCheck },
   ],
   admin: [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
