@@ -135,40 +135,42 @@ const SalespersonDashboard = () => {
       const stats: DailyStats[] = [];
       const dateMap = new Map<string, DailyStats>();
       
-      visitsData.forEach((visit: ShopVisit) => {
-        const date = new Date(visit.created_at).toISOString().split('T')[0];
-        
-        if (!dateMap.has(date)) {
-          dateMap.set(date, {
-            date,
-            totalVisits: 0,
-            completedVisits: 0,
-            hasRecordings: 0,
-            salespeople: {}
-          });
-        }
-        
-        const dayStat = dateMap.get(date)!;
-        dayStat.totalVisits++;
-        
-        if (visit.status === 'completed') {
-          dayStat.completedVisits++;
-        }
-        
-        if (visit.audio_url) {
-          dayStat.hasRecordings++;
-        }
-        
-        if (!dayStat.salespeople[visit.salesperson_id]) {
-          const salesperson = peopleData.find(p => p.id === visit.salesperson_id);
-          dayStat.salespeople[visit.salesperson_id] = {
-            name: salesperson ? salesperson.full_name || salesperson.email : 'Unknown',
-            visits: 0
-          };
-        }
-        
-        dayStat.salespeople[visit.salesperson_id].visits++;
-      });
+      if (visitsData) {
+        visitsData.forEach((visit: ShopVisit) => {
+          const date = new Date(visit.created_at).toISOString().split('T')[0];
+          
+          if (!dateMap.has(date)) {
+            dateMap.set(date, {
+              date,
+              totalVisits: 0,
+              completedVisits: 0,
+              hasRecordings: 0,
+              salespeople: {}
+            });
+          }
+          
+          const dayStat = dateMap.get(date)!;
+          dayStat.totalVisits++;
+          
+          if (visit.status === 'completed') {
+            dayStat.completedVisits++;
+          }
+          
+          if (visit.audio_url) {
+            dayStat.hasRecordings++;
+          }
+          
+          if (!dayStat.salespeople[visit.salesperson_id]) {
+            const salesperson = peopleData.find(p => p.id === visit.salesperson_id);
+            dayStat.salespeople[visit.salesperson_id] = {
+              name: salesperson ? salesperson.full_name || salesperson.email : 'Unknown',
+              visits: 0
+            };
+          }
+          
+          dayStat.salespeople[visit.salesperson_id].visits++;
+        });
+      }
       
       // Convert Map to array and sort by date
       dateMap.forEach(stat => stats.push(stat));

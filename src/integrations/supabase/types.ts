@@ -399,6 +399,42 @@ export type Database = {
           },
         ]
       }
+      shop_visits: {
+        Row: {
+          audio_url: string | null
+          created_at: string
+          id: string
+          location: Json
+          notes: string | null
+          salesperson_id: string
+          shop_name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string
+          id?: string
+          location: Json
+          notes?: string | null
+          salesperson_id: string
+          shop_name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string
+          id?: string
+          location?: Json
+          notes?: string | null
+          salesperson_id?: string
+          shop_name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

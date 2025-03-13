@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Mic, MapPin, CheckCircle, X, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Geolocation } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
 
 interface ShopVisit {
   id: string;
@@ -108,7 +108,7 @@ const SalespersonTracker = () => {
 
       if (error) throw error;
 
-      setCurrentVisit(data[0]);
+      setCurrentVisit(data[0] as ShopVisit);
       toast({
         title: "Visit started",
         description: "Your location has been recorded",
