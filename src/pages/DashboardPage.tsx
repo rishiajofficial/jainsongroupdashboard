@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +8,7 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, Clock, BarChart3, Bell } from "lucide-react";
 
-// Create a consistent UserRole type that includes 'salesperson'
+// Update UserRole to include 'salesperson'
 export type UserRole = 'candidate' | 'salesperson' | 'manager' | 'admin';
 
 interface RecentActivity {

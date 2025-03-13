@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Header } from "@/components/ui/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -7,8 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProfileHeader } from "@/components/userProfile/ProfileHeader";
 import { ProfilePicture } from "@/components/userProfile/ProfilePicture";
 import { ProfileForm } from "@/components/userProfile/ProfileForm";
-
-type UserRole = 'candidate' | 'manager' | 'admin';
+import { UserRole } from "@/pages/DashboardPage";
 
 const UserProfile = () => {
   const [isLoading, setIsLoading] = useState(true);

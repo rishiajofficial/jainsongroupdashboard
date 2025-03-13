@@ -123,6 +123,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               </div>
             </>
           )}
+          
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -135,6 +136,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               className="h-11"
             />
           </div>
+          
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <div className="relative">
