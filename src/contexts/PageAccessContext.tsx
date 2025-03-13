@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageAccessRule, CONFIGURABLE_PAGES } from "@/types/pageAccess";
@@ -7,10 +8,11 @@ import { toast } from "sonner";
 interface PageAccessContextType {
   accessRules: PageAccessRule[];
   isLoading: boolean;
-  hasAccess: (path: string, role: UserRole) => boolean;
+  isPageVisible: (path: string, role: UserRole) => boolean;
   refreshRules: () => Promise<void>;
   updateRule: (ruleId: string, updates: Partial<PageAccessRule>) => Promise<void>;
   createDefaultRulesIfNeeded: () => Promise<void>;
+  bulkUpdateRolesAccess: (role: UserRole, enabled: boolean) => Promise<void>;
 }
 
 const PageAccessContext = createContext<PageAccessContextType | undefined>(undefined);
@@ -101,7 +103,46 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const hasAccess = (path: string, role: UserRole): boolean => {
+  const bulkUpdateRolesAccess = async (role: UserRole, enabled: boolean) => {
+    try {
+      const rulesToUpdate = accessRules.filter(rule => 
+        CONFIGURABLE_PAGES.find(page => page.path === rule.page_path && page.defaultRoles.includes(role))
+      );
+      
+      const updates = rulesToUpdate.map(rule => {
+        const hasRole = rule.allowed_roles.includes(role);
+        const newAllowedRoles = enabled
+          ? hasRole ? rule.allowed_roles : [...rule.allowed_roles, role]
+          : rule.allowed_roles.filter(r => r !== role);
+        
+        return {
+          id: rule.id,
+          allowed_roles: newAllowedRoles.length > 0 ? newAllowedRoles : [role]
+        };
+      });
+      
+      // Process updates in batches to avoid timeouts
+      const batchSize = 10;
+      for (let i = 0; i < updates.length; i += batchSize) {
+        const batch = updates.slice(i, i + batchSize);
+        
+        for (const update of batch) {
+          await supabase
+            .from('page_access_rules')
+            .update({ allowed_roles: update.allowed_roles })
+            .eq('id', update.id);
+        }
+      }
+      
+      await fetchRules();
+      toast.success(`${enabled ? 'Enabled' : 'Disabled'} all pages for ${role} role`);
+    } catch (error) {
+      console.error('Error bulk updating access rules:', error);
+      toast.error('Failed to update multiple page access settings');
+    }
+  };
+
+  const isPageVisible = (path: string, role: UserRole): boolean => {
     if (role === 'admin') return true;
     
     if (isLoading) return true;
@@ -121,10 +162,11 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
     <PageAccessContext.Provider value={{
       accessRules,
       isLoading,
-      hasAccess,
+      isPageVisible,
       refreshRules: fetchRules,
       updateRule,
-      createDefaultRulesIfNeeded
+      createDefaultRulesIfNeeded,
+      bulkUpdateRolesAccess
     }}>
       {children}
     </PageAccessContext.Provider>

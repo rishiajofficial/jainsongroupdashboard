@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Header } from "@/components/ui/Header";
 import { SideNav } from "@/components/ui/dashboard/SideNav";
@@ -19,13 +18,84 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { usePageAccess } from "@/contexts/PageAccessContext";
 import { PageAccessRule, CONFIGURABLE_PAGES } from "@/types/pageAccess";
 import { UserRole } from "@/pages/DashboardPage";
-import { AlertCircle, Lock, RefreshCw, Settings2 } from "lucide-react";
+import { AlertCircle, Lock, RefreshCw, Settings2, Check, X } from "lucide-react";
 import { toast } from "sonner";
+
+const SelectAllControl = ({ role, filteredRules }: { role: UserRole, filteredRules: PageAccessRule[] }) => {
+  const { bulkUpdateRolesAccess } = usePageAccess();
+  const [isAllSelected, setIsAllSelected] = useState(false);
+  
+  useEffect(() => {
+    if (filteredRules.length > 0) {
+      const allSelected = filteredRules.every(rule => 
+        rule.allowed_roles.includes(role as UserRole)
+      );
+      setIsAllSelected(allSelected);
+    }
+  }, [filteredRules, role]);
+  
+  const handleSelectAll = async () => {
+    await bulkUpdateRolesAccess(role as UserRole, !isAllSelected);
+  };
+  
+  return (
+    <div className="flex items-center mb-4 justify-end">
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={handleSelectAll}
+        className="text-xs"
+      >
+        {isAllSelected ? (
+          <>
+            <X className="mr-1 h-3 w-3" />
+            Deselect All
+          </>
+        ) : (
+          <>
+            <Check className="mr-1 h-3 w-3" />
+            Select All
+          </>
+        )}
+      </Button>
+    </div>
+  );
+};
+
+const RoleToggle = ({ rule, role }: { rule: PageAccessRule, role: UserRole }) => {
+  const { updateRule } = usePageAccess();
+  const isEnabled = rule.allowed_roles.includes(role);
+
+  const toggleRoleAccess = async () => {
+    try {
+      const newAllowedRoles = isEnabled
+        ? rule.allowed_roles.filter(r => r !== role)
+        : [...rule.allowed_roles, role];
+      
+      if (newAllowedRoles.length === 0) {
+        toast.error("At least one role must have access to this page");
+        return;
+      }
+      
+      await updateRule(rule.id, { allowed_roles: newAllowedRoles });
+    } catch (error) {
+      console.error("Error updating role access:", error);
+    }
+  };
+
+  return (
+    <Checkbox
+      checked={isEnabled}
+      onCheckedChange={toggleRoleAccess}
+      aria-label={`Toggle ${role} access`}
+    />
+  );
+};
 
 const AdminPageAccess = () => {
   const { 
@@ -38,11 +108,12 @@ const AdminPageAccess = () => {
   
   const [activeTab, setActiveTab] = useState<string>("all");
   const [filteredRules, setFilteredRules] = useState<PageAccessRule[]>([]);
+  const [visibleRoles, setVisibleRoles] = useState<UserRole[]>(['admin', 'manager', 'salesperson', 'candidate']);
 
   useEffect(() => {
-    // Filter rules based on active tab
     if (activeTab === "all") {
       setFilteredRules(accessRules);
+      setVisibleRoles(['admin', 'manager', 'salesperson', 'candidate']);
     } else {
       const roleFilter = activeTab as UserRole;
       setFilteredRules(
@@ -53,6 +124,7 @@ const AdminPageAccess = () => {
           )
         )
       );
+      setVisibleRoles([roleFilter]);
     }
   }, [accessRules, activeTab]);
 
@@ -73,27 +145,6 @@ const AdminPageAccess = () => {
     }
   };
 
-  const toggleRoleAccess = async (rule: PageAccessRule, role: UserRole) => {
-    try {
-      const hasRole = rule.allowed_roles.includes(role);
-      
-      // Create a new array of allowed roles
-      const newAllowedRoles = hasRole
-        ? rule.allowed_roles.filter(r => r !== role)
-        : [...rule.allowed_roles, role];
-      
-      // Ensure we don't remove all roles
-      if (newAllowedRoles.length === 0) {
-        toast.error("At least one role must have access to this page");
-        return;
-      }
-      
-      await updateRule(rule.id, { allowed_roles: newAllowedRoles });
-    } catch (error) {
-      console.error("Error updating role access:", error);
-    }
-  };
-
   const getPageDescription = (path: string): string => {
     const pageConfig = CONFIGURABLE_PAGES.find(page => page.path === path);
     return pageConfig?.description || "Page description not available";
@@ -111,10 +162,10 @@ const AdminPageAccess = () => {
                 <div>
                   <CardTitle className="text-2xl font-bold flex items-center">
                     <Lock className="mr-2 h-5 w-5" />
-                    Page Access Control
+                    Page Visibility Control
                   </CardTitle>
                   <CardDescription>
-                    Control which user roles can access specific pages
+                    Control which pages are visible in navigation for different user roles
                   </CardDescription>
                 </div>
                 <div className="flex space-x-2">
@@ -148,7 +199,7 @@ const AdminPageAccess = () => {
                   <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No Access Rules Found</h3>
                   <p className="text-muted-foreground mb-4">
-                    It looks like page access rules haven't been set up yet.
+                    It looks like page visibility rules haven't been set up yet.
                   </p>
                   <Button onClick={handleInitialize}>
                     Initialize Default Access Rules
@@ -166,6 +217,13 @@ const AdminPageAccess = () => {
                     </TabsList>
                   </Tabs>
                 
+                  {activeTab !== "all" && (
+                    <SelectAllControl 
+                      role={activeTab as UserRole} 
+                      filteredRules={filteredRules} 
+                    />
+                  )}
+                
                   <div className="rounded-md border">
                     <Table>
                       <TableHeader>
@@ -173,16 +231,24 @@ const AdminPageAccess = () => {
                           <TableHead className="w-[250px]">Page</TableHead>
                           <TableHead className="w-[300px]">Description</TableHead>
                           <TableHead className="text-center">Enable/Disable</TableHead>
-                          <TableHead className="text-center">Admin</TableHead>
-                          <TableHead className="text-center">Manager</TableHead>
-                          <TableHead className="text-center">Salesperson</TableHead>
-                          <TableHead className="text-center">Candidate</TableHead>
+                          {visibleRoles.includes('admin') && (
+                            <TableHead className="text-center">Admin</TableHead>
+                          )}
+                          {visibleRoles.includes('manager') && (
+                            <TableHead className="text-center">Manager</TableHead>
+                          )}
+                          {visibleRoles.includes('salesperson') && (
+                            <TableHead className="text-center">Salesperson</TableHead>
+                          )}
+                          {visibleRoles.includes('candidate') && (
+                            <TableHead className="text-center">Candidate</TableHead>
+                          )}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredRules.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={7} className="text-center py-8">
+                            <TableCell colSpan={5} className="text-center py-8">
                               <div className="flex flex-col items-center justify-center text-muted-foreground">
                                 <AlertCircle className="h-8 w-8 mb-2" />
                                 <p>No pages found for this filter</p>
@@ -202,54 +268,26 @@ const AdminPageAccess = () => {
                                   onCheckedChange={() => togglePageEnabled(rule)}
                                 />
                               </TableCell>
-                              <TableCell className="text-center">
-                                <ToggleGroup type="single" value={rule.allowed_roles.includes('admin') ? 'on' : 'off'}>
-                                  <ToggleGroupItem 
-                                    value="on" 
-                                    onClick={() => toggleRoleAccess(rule, 'admin')}
-                                    aria-label="Toggle admin access"
-                                    className={rule.allowed_roles.includes('admin') ? 'bg-green-100 text-green-800 data-[state=on]:bg-green-200' : ''}
-                                  >
-                                    {rule.allowed_roles.includes('admin') ? '✓' : '×'}
-                                  </ToggleGroupItem>
-                                </ToggleGroup>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <ToggleGroup type="single" value={rule.allowed_roles.includes('manager') ? 'on' : 'off'}>
-                                  <ToggleGroupItem 
-                                    value="on" 
-                                    onClick={() => toggleRoleAccess(rule, 'manager')}
-                                    aria-label="Toggle manager access"
-                                    className={rule.allowed_roles.includes('manager') ? 'bg-green-100 text-green-800 data-[state=on]:bg-green-200' : ''}
-                                  >
-                                    {rule.allowed_roles.includes('manager') ? '✓' : '×'}
-                                  </ToggleGroupItem>
-                                </ToggleGroup>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <ToggleGroup type="single" value={rule.allowed_roles.includes('salesperson') ? 'on' : 'off'}>
-                                  <ToggleGroupItem 
-                                    value="on" 
-                                    onClick={() => toggleRoleAccess(rule, 'salesperson')}
-                                    aria-label="Toggle salesperson access"
-                                    className={rule.allowed_roles.includes('salesperson') ? 'bg-green-100 text-green-800 data-[state=on]:bg-green-200' : ''}
-                                  >
-                                    {rule.allowed_roles.includes('salesperson') ? '✓' : '×'}
-                                  </ToggleGroupItem>
-                                </ToggleGroup>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <ToggleGroup type="single" value={rule.allowed_roles.includes('candidate') ? 'on' : 'off'}>
-                                  <ToggleGroupItem 
-                                    value="on" 
-                                    onClick={() => toggleRoleAccess(rule, 'candidate')}
-                                    aria-label="Toggle candidate access"
-                                    className={rule.allowed_roles.includes('candidate') ? 'bg-green-100 text-green-800 data-[state=on]:bg-green-200' : ''}
-                                  >
-                                    {rule.allowed_roles.includes('candidate') ? '✓' : '×'}
-                                  </ToggleGroupItem>
-                                </ToggleGroup>
-                              </TableCell>
+                              {visibleRoles.includes('admin') && (
+                                <TableCell className="text-center">
+                                  <RoleToggle rule={rule} role="admin" />
+                                </TableCell>
+                              )}
+                              {visibleRoles.includes('manager') && (
+                                <TableCell className="text-center">
+                                  <RoleToggle rule={rule} role="manager" />
+                                </TableCell>
+                              )}
+                              {visibleRoles.includes('salesperson') && (
+                                <TableCell className="text-center">
+                                  <RoleToggle rule={rule} role="salesperson" />
+                                </TableCell>
+                              )}
+                              {visibleRoles.includes('candidate') && (
+                                <TableCell className="text-center">
+                                  <RoleToggle rule={rule} role="candidate" />
+                                </TableCell>
+                              )}
                             </TableRow>
                           ))
                         )}
