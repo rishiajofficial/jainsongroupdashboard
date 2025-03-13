@@ -131,12 +131,28 @@ export function PageAccessGuard({ children }: PageAccessGuardProps) {
   
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      // First clear all local storage related to authentication
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('supabase.') || key.includes('supabase')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // Then sign out from Supabase
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      
+      if (error) throw error;
+      
       toast.success("Logged out successfully");
-      navigate("/login");
+      
+      // Force hard navigation to the login page
+      window.location.href = "/login";
     } catch (error) {
       console.error("Logout error:", error);
       toast.error("Failed to log out. Please try again.");
+      
+      // Even if there's an error, force navigation to login
+      window.location.href = "/login";
     }
   };
   

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { toast } from "sonner";
@@ -98,7 +97,14 @@ export function Header() {
 
   const handleLogout = async () => {
     try {
-      // Complete logout - clear all sessions and storage
+      // First clear all local storage related to authentication
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('supabase.') || key.includes('supabase')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // Then sign out from Supabase
       const { error } = await supabase.auth.signOut({ scope: 'global' });
       
       if (error) throw error;
@@ -108,24 +114,16 @@ export function Header() {
       setUser(null);
       toast.success("Successfully logged out");
       
-      // Clear all Supabase-related data from localStorage
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('supabase.') || key.includes('supabase')) {
-          localStorage.removeItem(key);
-        }
-      });
-      
-      // Force browser refresh to clear any cached authentication state
-      window.location.href = "/";
+      // Force hard navigation to login page
+      window.location.href = "/login";
     } catch (error: any) {
       console.error("Logout error:", error);
-      // Even if there's an error, we should still reset the client state
+      toast.error(error.message || "Error logging out");
+      
+      // Even if there's an error, we should still reset the client state and force navigation
       setIsAuthenticated(false);
       setUser(null);
-      toast.error(error.message || "Error logging out, but you've been logged out locally");
-      
-      // Force browser refresh to clear any cached authentication state
-      window.location.href = "/";
+      window.location.href = "/login";
     }
   };
 

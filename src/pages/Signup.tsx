@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthForm } from "@/components/AuthForm";
@@ -13,6 +12,18 @@ const Signup = () => {
     // Check if user is already authenticated
     const checkAuth = async () => {
       try {
+        // Clear any potentially stale auth data
+        if (window.location.href.includes('?error=')) {
+          // If there was an auth error in the URL, clear local storage
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('supabase.') || key.includes('supabase')) {
+              localStorage.removeItem(key);
+            }
+          });
+          setIsLoading(false);
+          return;
+        }
+        
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -39,9 +50,6 @@ const Signup = () => {
       (event, session) => {
         if (event === 'SIGNED_IN' && session) {
           navigate("/dashboard");
-        } else if (event === 'SIGNED_OUT') {
-          // Force redirection to login page on sign out
-          navigate("/login");
         }
       }
     );
