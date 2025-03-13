@@ -7,8 +7,7 @@ import { PublicNavigation } from "@/components/navigation/PublicNavigation";
 import { CandidateNavigation } from "@/components/navigation/CandidateNavigation";
 import { ManagerNavigation } from "@/components/navigation/ManagerNavigation";
 import { AdminNavigation } from "@/components/navigation/AdminNavigation";
-
-type UserRole = 'candidate' | 'manager' | 'admin';
+import { UserRole } from "@/pages/DashboardPage";
 
 interface UserData {
   email?: string;
@@ -31,6 +30,8 @@ const getRoleBadgeVariant = (role: UserRole) => {
       return 'destructive';
     case 'manager':
       return 'default';
+    case 'salesperson':
+      return 'secondary';
     case 'candidate':
     default:
       return 'secondary';
