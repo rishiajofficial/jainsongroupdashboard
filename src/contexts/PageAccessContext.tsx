@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageAccessRule, CONFIGURABLE_PAGES } from "@/types/pageAccess";
 import { UserRole } from "@/pages/DashboardPage";
@@ -21,9 +21,11 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
   const [accessRules, setAccessRules] = useState<PageAccessRule[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchRules = async () => {
+  const fetchRules = useCallback(async () => {
     try {
       setIsLoading(true);
+      console.log("Fetching page access rules...");
+      
       const { data, error } = await supabase
         .from('page_access_rules')
         .select('*');
@@ -37,6 +39,7 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
         allowed_roles: rule.allowed_roles as UserRole[]
       })) || [];
 
+      console.log("Fetched rules:", typedRules.length);
       setAccessRules(typedRules);
     } catch (error) {
       console.error('Error fetching page access rules:', error);
@@ -44,7 +47,7 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const createDefaultRulesIfNeeded = async () => {
     try {
@@ -142,7 +145,7 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const isPageVisible = (path: string, role: UserRole): boolean => {
+  const isPageVisible = useCallback((path: string, role: UserRole): boolean => {
     if (role === 'admin') return true;
     
     if (isLoading) return true;
@@ -152,11 +155,12 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
     if (!rule || !rule.is_enabled) return false;
     
     return rule.allowed_roles.includes(role);
-  };
+  }, [accessRules, isLoading]);
 
+  // Initial fetch of rules
   useEffect(() => {
     fetchRules();
-  }, []);
+  }, [fetchRules]);
 
   return (
     <PageAccessContext.Provider value={{

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useUnreadApplications } from "@/hooks/useUnreadApplications";
 import { usePageAccess } from "@/contexts/PageAccessContext";
+import { useEffect } from "react";
 
 interface ManagerNavigationProps {
   variant: 'desktop' | 'mobile';
@@ -13,9 +14,14 @@ interface ManagerNavigationProps {
 
 export function ManagerNavigation({ variant, onClose = () => {} }: ManagerNavigationProps) {
   const { unreadCount } = useUnreadApplications();
-  const { isPageVisible } = usePageAccess();
+  const { isPageVisible, refreshRules } = usePageAccess();
   const hasUnread = unreadCount > 0;
   const isMobile = variant === 'mobile';
+
+  // Refresh rules when component mounts
+  useEffect(() => {
+    refreshRules();
+  }, [refreshRules]);
 
   const linkClass = isMobile 
     ? "block py-2 text-sm font-medium transition-colors hover:text-primary"

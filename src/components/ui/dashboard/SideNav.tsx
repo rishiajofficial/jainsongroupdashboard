@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { UserRole } from '@/pages/DashboardPage';
 import { usePageAccess } from '@/contexts/PageAccessContext';
+import { useEffect, useState } from 'react';
 
 // Define navigation items by user role
 const navigationItems = {
@@ -55,16 +56,28 @@ interface SideNavProps {
 
 export function SideNav({ role }: SideNavProps) {
   const location = useLocation();
-  const { isPageVisible, isLoading } = usePageAccess();
+  const { isPageVisible, isLoading, accessRules, refreshRules } = usePageAccess();
+  const [visibleItems, setVisibleItems] = useState<any[]>([]);
   const defaultItems = navigationItems[role] || navigationItems.candidate;
   
-  // Filter items based on visibility rules
-  const items = defaultItems.filter(item => 
-    // Always show admin pages to admins, and dashboard to everyone
-    role === 'admin' || 
-    item.href === '/dashboard' || 
-    isPageVisible(item.href, role)
-  );
+  // Load page access rules when the component mounts or role changes
+  useEffect(() => {
+    // Force refresh rules when component mounts or role changes
+    refreshRules();
+  }, [role, refreshRules]);
+  
+  // Update visible items when rules or role changes
+  useEffect(() => {
+    // Filter items based on visibility rules
+    const filteredItems = defaultItems.filter(item => 
+      // Always show admin pages to admins, and dashboard to everyone
+      role === 'admin' || 
+      item.href === '/dashboard' || 
+      isPageVisible(item.href, role)
+    );
+    
+    setVisibleItems(filteredItems);
+  }, [defaultItems, role, isPageVisible, accessRules]);
 
   return (
     <nav className="w-56 bg-background border-r border-border min-h-[calc(100vh-4rem)] pt-6">
@@ -79,7 +92,7 @@ export function SideNav({ role }: SideNavProps) {
               <div key={i} className="h-10 rounded-lg bg-muted animate-pulse mb-1"></div>
             ))
           ) : (
-            items.map((item) => (
+            visibleItems.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}

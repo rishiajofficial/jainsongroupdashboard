@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 import { Briefcase, FileText, Map, ClipboardCheck } from "lucide-react";
 import { usePageAccess } from "@/contexts/PageAccessContext";
+import { useEffect } from "react";
 
 interface CandidateNavigationProps {
   variant: 'desktop' | 'mobile';
@@ -10,7 +11,12 @@ interface CandidateNavigationProps {
 
 export function CandidateNavigation({ variant, onClose = () => {} }: CandidateNavigationProps) {
   const isMobile = variant === 'mobile';
-  const { isPageVisible } = usePageAccess();
+  const { isPageVisible, refreshRules } = usePageAccess();
+  
+  // Refresh rules when component mounts
+  useEffect(() => {
+    refreshRules();
+  }, [refreshRules]);
   
   const linkClass = isMobile 
     ? "block py-2 text-sm font-medium transition-colors hover:text-primary"
