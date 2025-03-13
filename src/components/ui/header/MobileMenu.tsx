@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { LayoutDashboard, LogOut, User, Settings, FileText, Briefcase, Shield } from "lucide-react";
+import { LayoutDashboard, LogOut, User, Settings, FileText, Briefcase, Shield, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useUnreadApplications } from "@/hooks/useUnreadApplications";
@@ -99,6 +99,14 @@ export function MobileMenu({ isAuthenticated, user, isOpen, onClose, onLogout }:
                   <FileText className="h-4 w-4 inline mr-2" />
                   My Applications
                 </Link>
+                <Link 
+                  to="/salesperson-tracker" 
+                  className="block py-2 text-sm font-medium transition-colors hover:text-primary"
+                  onClick={onClose}
+                >
+                  <Store className="h-4 w-4 inline mr-2" />
+                  Track Visits
+                </Link>
               </>
             )}
             
@@ -129,6 +137,14 @@ export function MobileMenu({ isAuthenticated, user, isOpen, onClose, onLogout }:
                       {unreadCount}
                     </Badge>
                   )}
+                </Link>
+                <Link 
+                  to="/salesperson-dashboard" 
+                  className="block py-2 text-sm font-medium transition-colors hover:text-primary"
+                  onClick={onClose}
+                >
+                  <Store className="h-4 w-4 inline mr-2" />
+                  Sales Tracking
                 </Link>
               </>
             )}

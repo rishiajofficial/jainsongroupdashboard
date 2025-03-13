@@ -23,6 +23,8 @@ import AssessmentTemplates from "./pages/AssessmentTemplates";
 import EditAssessmentTemplate from "./pages/EditAssessmentTemplate";
 import AssignAssessment from "./pages/AssignAssessment";
 import CandidateAssessments from "./pages/CandidateAssessments";
+import SalespersonTracker from "./pages/SalespersonTracker";
+import SalespersonDashboard from "./pages/SalespersonDashboard";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +61,10 @@ const App = () => (
           <Route path="/assessments/templates/new" element={<EditAssessmentTemplate />} />
           <Route path="/assessments/assign" element={<AssignAssessment />} />
           <Route path="/assessments/candidate" element={<CandidateAssessments />} />
+          
+          {/* Salesperson tracking routes */}
+          <Route path="/salesperson-tracker" element={<SalespersonTracker />} />
+          <Route path="/salesperson-dashboard" element={<SalespersonDashboard />} />
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

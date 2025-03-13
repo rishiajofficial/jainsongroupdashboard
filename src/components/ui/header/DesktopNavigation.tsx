@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Bell } from "lucide-react";
+import { Bell, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "./UserMenu";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +55,10 @@ export function DesktopNavigation({ isAuthenticated, user, onLogout }: DesktopNa
               <Link to="/applications" className="text-sm font-medium transition-colors hover:text-primary">
                 My Applications
               </Link>
+              <Link to="/salesperson-tracker" className="text-sm font-medium transition-colors hover:text-primary">
+                <Store className="h-4 w-4 inline mr-1" />
+                Track Visits
+              </Link>
             </>
           )}
           
@@ -73,6 +77,10 @@ export function DesktopNavigation({ isAuthenticated, user, onLogout }: DesktopNa
                     {unreadCount}
                   </Badge>
                 )}
+              </Link>
+              <Link to="/salesperson-dashboard" className="text-sm font-medium transition-colors hover:text-primary">
+                <Store className="h-4 w-4 inline mr-1" />
+                Sales Tracking
               </Link>
             </>
           )}
