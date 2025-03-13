@@ -12,7 +12,13 @@ import {
   Building, 
   Briefcase, 
   ClipboardCheck, 
-  ShieldCheck 
+  ShieldCheck,
+  Brain,
+  LineChart,
+  PieChart,
+  Target,
+  Bot,
+  Zap
 } from "lucide-react";
 
 const Index = () => {
@@ -50,114 +56,127 @@ const Index = () => {
   
   // Only render the landing page if not logged in
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-background/80">
       <Header />
       
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="bg-gradient-to-b from-background to-background/80 pt-20 pb-32">
-          <div className="container px-4 mx-auto">
-            <div className="flex flex-col md:flex-row items-center">
-              <div className="md:w-1/2 mb-12 md:mb-0">
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
-                  Jainson Group's Complete Workforce Management Solution
-                </h1>
-                <p className="text-xl text-muted-foreground mb-8 max-w-lg">
-                  A comprehensive platform for hiring, training, managing, and supervising your sales team - from candidate selection to performance tracking.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  {isLoggedIn ? (
-                    <Button size="lg" asChild>
-                      <Link to="/dashboard">Go to Dashboard</Link>
-                    </Button>
-                  ) : (
-                    <>
-                      <Button size="lg" asChild>
-                        <Link to="/signup">Get Started</Link>
-                      </Button>
-                      <Button variant="outline" size="lg" asChild>
-                        <Link to="/login">Sign In</Link>
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-              <div className="md:w-1/2 flex justify-center">
-                <img 
-                  src="https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=2850&q=80" 
-                  alt="Jainson Group Dashboard" 
-                  className="w-full max-w-lg rounded-lg shadow-lg object-cover"
-                  width={600}
-                  height={400}
-                />
-              </div>
-            </div>
-          </div>
-        </section>
-        
-        {/* About Jainson Group */}
-        <section className="py-20 bg-muted/30">
-          <div className="container px-4 mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold tracking-tight mb-4">About Jainson Group</h2>
-              <p className="text-muted-foreground text-lg max-w-3xl mx-auto">
-                Founded in 1977, Jainson Group is a pioneer in manufacturing superior quality padlocks, door locks, and architectural hardware. With a commitment to innovation and quality, we've expanded our operations to include a comprehensive workforce management solution.
-              </p>
-            </div>
-            
-            <div className="flex flex-col md:flex-row gap-8 items-center justify-center">
-              <div className="md:w-1/3">
-                <img 
-                  src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-1.2.1&auto=format&fit=crop&w=2850&q=80" 
-                  alt="Jainson Team" 
-                  className="rounded-lg shadow-md"
-                />
-              </div>
-              <div className="md:w-2/3 space-y-4">
-                <div className="flex items-start gap-4">
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <Building className="h-6 w-6 text-primary" />
+        {/* Hero Section with Animation */}
+        <section className="relative py-12 md:py-24 overflow-hidden">
+          <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+          
+          {/* Animated circles in background */}
+          <div className="absolute top-20 right-10 w-64 h-64 bg-primary/10 rounded-full filter blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 left-10 w-72 h-72 bg-blue-500/10 rounded-full filter blur-3xl animate-pulse" style={{ animationDelay: "1s" }}></div>
+          
+          <div className="container px-4 mx-auto relative z-10">
+            <div className="flex flex-col md:flex-row items-center max-w-7xl mx-auto">
+              <div className="md:w-1/2 mb-12 md:mb-0 md:pr-8">
+                <div className="space-y-4">
+                  <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                    <Zap className="h-4 w-4 mr-2" />
+                    <span>AI-Powered Management</span>
                   </div>
-                  <div>
-                    <h3 className="text-xl font-semibold">Legacy of Excellence</h3>
-                    <p className="text-muted-foreground">
-                      With over four decades of manufacturing experience, Jainson Group has established itself as a trusted name in security solutions.
-                    </p>
+                  
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600">
+                    Jainson Group's Administration Dashboard
+                  </h1>
+                  
+                  <p className="text-xl text-muted-foreground mb-8 max-w-lg">
+                    A comprehensive platform integrating AI for hiring, training, managing, and supervising your sales team - from candidate selection to performance insights.
+                  </p>
+                  
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    {isLoggedIn ? (
+                      <Button size="lg" className="animate-fade-in" asChild>
+                        <Link to="/dashboard">Go to Dashboard</Link>
+                      </Button>
+                    ) : (
+                      <>
+                        <Button size="lg" className="animate-fade-in" asChild>
+                          <Link to="/signup">Get Started</Link>
+                        </Button>
+                        <Button variant="outline" size="lg" className="animate-fade-in" asChild>
+                          <Link to="/login">Sign In</Link>
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
                 
-                <div className="flex items-start gap-4">
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <ShieldCheck className="h-6 w-6 text-primary" />
+                {/* Feature badges */}
+                <div className="mt-12 grid grid-cols-2 gap-4">
+                  <div className="flex items-center p-3 bg-background/80 border border-border rounded-lg animate-fade-up" style={{ animationDelay: "0.1s" }}>
+                    <div className="mr-3 bg-primary/10 p-2 rounded-full">
+                      <Brain className="h-5 w-5 text-primary" />
+                    </div>
+                    <span className="text-sm font-medium">AI Recruiting</span>
                   </div>
-                  <div>
-                    <h3 className="text-xl font-semibold">Quality Assurance</h3>
-                    <p className="text-muted-foreground">
-                      Our products undergo rigorous quality tests to ensure durability, reliability, and security that meets international standards.
-                    </p>
+                  
+                  <div className="flex items-center p-3 bg-background/80 border border-border rounded-lg animate-fade-up" style={{ animationDelay: "0.2s" }}>
+                    <div className="mr-3 bg-primary/10 p-2 rounded-full">
+                      <Target className="h-5 w-5 text-primary" />
+                    </div>
+                    <span className="text-sm font-medium">Performance Tracking</span>
+                  </div>
+                  
+                  <div className="flex items-center p-3 bg-background/80 border border-border rounded-lg animate-fade-up" style={{ animationDelay: "0.3s" }}>
+                    <div className="mr-3 bg-primary/10 p-2 rounded-full">
+                      <GraduationCap className="h-5 w-5 text-primary" />
+                    </div>
+                    <span className="text-sm font-medium">Smart Training</span>
+                  </div>
+                  
+                  <div className="flex items-center p-3 bg-background/80 border border-border rounded-lg animate-fade-up" style={{ animationDelay: "0.4s" }}>
+                    <div className="mr-3 bg-primary/10 p-2 rounded-full">
+                      <Bot className="h-5 w-5 text-primary" />
+                    </div>
+                    <span className="text-sm font-medium">AI Insights</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="md:w-1/2 relative">
+                <div className="relative z-10 rounded-xl overflow-hidden shadow-2xl border border-border/50 animate-scale-in">
+                  <img 
+                    src="https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-1.2.1&auto=format&fit=crop&w=2850&q=80" 
+                    alt="Jainson Group Dashboard" 
+                    className="w-full object-cover"
+                    width={700}
+                    height={500}
+                  />
+                  
+                  {/* Floating UI elements for visual appeal */}
+                  <div className="absolute top-5 right-5 p-3 bg-background/90 border border-border rounded-lg shadow-lg backdrop-blur-sm animate-fade-up" style={{ animationDelay: "0.5s" }}>
+                    <div className="flex items-center gap-2">
+                      <PieChart className="h-4 w-4 text-primary" />
+                      <span className="text-xs font-medium">AI Analysis Active</span>
+                    </div>
+                  </div>
+                  
+                  <div className="absolute bottom-5 left-5 p-3 bg-background/90 border border-border rounded-lg shadow-lg backdrop-blur-sm animate-fade-up" style={{ animationDelay: "0.6s" }}>
+                    <div className="flex items-center gap-2">
+                      <LineChart className="h-4 w-4 text-green-500" />
+                      <span className="text-xs font-medium">Sales Trend: +24%</span>
+                    </div>
                   </div>
                 </div>
                 
-                <div className="flex items-start gap-4">
-                  <div className="bg-primary/10 p-3 rounded-full">
-                    <Users className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold">Exceptional Team</h3>
-                    <p className="text-muted-foreground">
-                      Our success is built on our dedicated workforce that's nurtured through our comprehensive management platform.
-                    </p>
-                  </div>
-                </div>
+                {/* Decorative elements */}
+                <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-primary/5 rounded-full"></div>
+                <div className="absolute -left-4 -top-4 w-20 h-20 bg-blue-500/5 rounded-full"></div>
               </div>
             </div>
           </div>
         </section>
         
         {/* Dashboard Features */}
-        <section className="py-20">
+        <section className="py-20 bg-muted/30">
           <div className="container px-4 mx-auto">
             <div className="text-center mb-16">
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+                <Bot className="h-4 w-4 mr-2" />
+                <span>AI-Powered Workforce Management</span>
+              </div>
               <h2 className="text-3xl font-bold tracking-tight mb-4">Complete Workforce Management</h2>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
                 Our comprehensive platform covers the entire employee lifecycle, from recruitment to performance management.
@@ -166,7 +185,7 @@ const Index = () => {
             
             {/* User Roles */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-              <div className="bg-background p-8 rounded-lg shadow-sm border border-border hover:border-primary/50 transition-colors">
+              <div className="bg-background p-8 rounded-lg shadow-sm border border-border hover:border-primary/50 transition-colors animate-fade-up" style={{ animationDelay: "0.1s" }}>
                 <div className="flex items-center gap-4 mb-6">
                   <div className="bg-blue-100 p-3 rounded-full">
                     <Briefcase className="h-6 w-6 text-blue-600" />
@@ -184,11 +203,11 @@ const Index = () => {
                   </li>
                   <li className="flex items-center gap-2">
                     <ClipboardCheck className="h-5 w-5 text-green-500" />
-                    <span>Complete assessments</span>
+                    <span>Complete AI-evaluated assessments</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <ClipboardCheck className="h-5 w-5 text-green-500" />
-                    <span>Showcase skills and experience</span>
+                    <span>Receive AI-matched job recommendations</span>
                   </li>
                 </ul>
                 <Button variant="outline" asChild className="w-full">
@@ -196,7 +215,7 @@ const Index = () => {
                 </Button>
               </div>
               
-              <div className="bg-background p-8 rounded-lg shadow-sm border border-border hover:border-primary/50 transition-colors">
+              <div className="bg-background p-8 rounded-lg shadow-sm border border-border hover:border-primary/50 transition-colors animate-fade-up" style={{ animationDelay: "0.2s" }}>
                 <div className="flex items-center gap-4 mb-6">
                   <div className="bg-green-100 p-3 rounded-full">
                     <Users className="h-6 w-6 text-green-600" />
@@ -214,11 +233,11 @@ const Index = () => {
                   </li>
                   <li className="flex items-center gap-2">
                     <ClipboardCheck className="h-5 w-5 text-green-500" />
-                    <span>Monitor performance metrics</span>
+                    <span>Get AI-powered performance insights</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <ClipboardCheck className="h-5 w-5 text-green-500" />
-                    <span>Access training materials</span>
+                    <span>Access personalized training</span>
                   </li>
                 </ul>
                 <Button variant="outline" asChild className="w-full">
@@ -226,7 +245,7 @@ const Index = () => {
                 </Button>
               </div>
               
-              <div className="bg-background p-8 rounded-lg shadow-sm border border-border hover:border-primary/50 transition-colors">
+              <div className="bg-background p-8 rounded-lg shadow-sm border border-border hover:border-primary/50 transition-colors animate-fade-up" style={{ animationDelay: "0.3s" }}>
                 <div className="flex items-center gap-4 mb-6">
                   <div className="bg-purple-100 p-3 rounded-full">
                     <BarChart3 className="h-6 w-6 text-purple-600" />
@@ -236,19 +255,19 @@ const Index = () => {
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-center gap-2">
                     <ClipboardCheck className="h-5 w-5 text-green-500" />
-                    <span>Manage job listings</span>
+                    <span>AI-optimized job listings</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <ClipboardCheck className="h-5 w-5 text-green-500" />
-                    <span>Review applications</span>
+                    <span>Automated application screening</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <ClipboardCheck className="h-5 w-5 text-green-500" />
-                    <span>Create assessment templates</span>
+                    <span>Create AI assessment templates</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <ClipboardCheck className="h-5 w-5 text-green-500" />
-                    <span>Monitor salesperson performance</span>
+                    <span>Monitor real-time team analytics</span>
                   </li>
                 </ul>
                 <Button variant="outline" asChild className="w-full">
@@ -259,83 +278,36 @@ const Index = () => {
           </div>
         </section>
         
-        {/* Dashboard Highlights */}
-        <section className="py-20 bg-muted/30">
-          <div className="container px-4 mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              <div>
-                <h2 className="text-3xl font-bold tracking-tight mb-6">
-                  Streamlined Hiring Process
-                </h2>
-                <p className="text-lg text-muted-foreground mb-6">
-                  Our platform simplifies the entire hiring process, from posting job listings to interviewing candidates and making offers.
-                </p>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-4">
-                    <div className="bg-primary/10 p-3 rounded-full">
-                      <Briefcase className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold">Job Management</h3>
-                      <p className="text-muted-foreground">
-                        Easily create, edit, and manage job postings with customizable templates.
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-4">
-                    <div className="bg-primary/10 p-3 rounded-full">
-                      <ClipboardCheck className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold">Application Tracking</h3>
-                      <p className="text-muted-foreground">
-                        Review applications, track candidate status, and collaborate with your team.
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-4">
-                    <div className="bg-primary/10 p-3 rounded-full">
-                      <GraduationCap className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold">Skills Assessment</h3>
-                      <p className="text-muted-foreground">
-                        Create custom assessments to evaluate candidate skills and qualifications.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center justify-center">
-                <img 
-                  src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-1.2.1&auto=format&fit=crop&w=2850&q=80" 
-                  alt="Hiring Process" 
-                  className="rounded-lg shadow-lg max-w-md w-full"
-                />
-              </div>
-            </div>
-          </div>
-        </section>
-        
         {/* Field Sales Tracking */}
         <section className="py-20">
           <div className="container px-4 mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              <div className="order-2 md:order-1 flex items-center justify-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+              <div className="order-2 md:order-1 flex items-center justify-center relative">
+                <div className="absolute top-0 left-0 w-40 h-40 bg-primary/5 rounded-full filter blur-xl"></div>
                 <img 
                   src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-1.2.1&auto=format&fit=crop&w=2850&q=80" 
                   alt="Sales Tracking" 
-                  className="rounded-lg shadow-lg max-w-md w-full"
+                  className="rounded-lg shadow-lg max-w-md w-full relative z-10 animate-fade-up"
                 />
+                
+                {/* Floating elements */}
+                <div className="absolute -bottom-4 -right-4 p-3 bg-background border border-border rounded-lg shadow-lg z-20 animate-fade-up" style={{ animationDelay: "0.4s" }}>
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-4 w-4 text-primary" />
+                    <span className="text-xs font-medium">AI analyzing visit data</span>
+                  </div>
+                </div>
               </div>
               <div className="order-1 md:order-2">
+                <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+                  <LineChart className="h-4 w-4 mr-2" />
+                  <span>Real-time Analytics</span>
+                </div>
                 <h2 className="text-3xl font-bold tracking-tight mb-6">
                   Advanced Field Sales Tracking
                 </h2>
                 <p className="text-lg text-muted-foreground mb-6">
-                  Monitor your sales team's activities, track shop visits, and analyze performance metrics in real-time.
+                  Monitor your sales team's activities, track shop visits, and analyze performance metrics in real-time with AI-powered insights.
                 </p>
                 <div className="space-y-4">
                   <div className="flex items-start gap-4">
@@ -343,9 +315,9 @@ const Index = () => {
                       <BarChart3 className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold">Performance Analytics</h3>
+                      <h3 className="text-lg font-semibold">AI-Powered Performance Analytics</h3>
                       <p className="text-muted-foreground">
-                        Visualize sales activities and performance with comprehensive dashboards.
+                        Get predictive insights and anomaly detection for sales activities with comprehensive dashboards.
                       </p>
                     </div>
                   </div>
@@ -355,9 +327,9 @@ const Index = () => {
                       <Building className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold">Shop Visit Tracking</h3>
+                      <h3 className="text-lg font-semibold">Intelligent Shop Visit Tracking</h3>
                       <p className="text-muted-foreground">
-                        Track field visits with location data, photos, and sales pitch recordings.
+                        Track field visits with location verification, auto-analysis of photos, and AI feedback on sales pitches.
                       </p>
                     </div>
                   </div>
@@ -367,9 +339,9 @@ const Index = () => {
                       <Users className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold">Team Management</h3>
+                      <h3 className="text-lg font-semibold">Smart Team Management</h3>
                       <p className="text-muted-foreground">
-                        Assign territories, set goals, and monitor individual salesperson performance.
+                        Optimize territory assignments, set AI-recommended goals, and provide automated coaching to your team.
                       </p>
                     </div>
                   </div>
@@ -380,21 +352,33 @@ const Index = () => {
         </section>
         
         {/* Call to Action */}
-        <section className="py-20 bg-primary/5">
-          <div className="container px-4 mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">
-              Ready to Transform Your Workforce Management?
-            </h2>
-            <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
-              Join Jainson Group's platform and experience the full suite of tools to hire, train, and manage your sales team effectively.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button size="lg" asChild>
-                <Link to="/signup">Get Started Today</Link>
-              </Button>
-              <Button variant="outline" size="lg" asChild>
-                <Link to="/login">Sign In to Your Account</Link>
-              </Button>
+        <section className="py-20 bg-primary/5 relative overflow-hidden">
+          <div className="absolute inset-0">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full filter blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-500/10 rounded-full filter blur-3xl"></div>
+          </div>
+          
+          <div className="container px-4 mx-auto text-center relative z-10">
+            <div className="max-w-3xl mx-auto">
+              <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4 animate-pulse">
+                <Zap className="h-4 w-4 mr-2" />
+                <span>AI-Powered Efficiency</span>
+              </div>
+              
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">
+                Transform Your Workforce Management Today
+              </h2>
+              <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
+                Join Jainson Group's platform and experience the full suite of AI-enhanced tools to hire, train, and manage your sales team effectively.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Button size="lg" className="animate-fade-up" asChild>
+                  <Link to="/signup">Get Started Today</Link>
+                </Button>
+                <Button variant="outline" size="lg" className="animate-fade-up" style={{ animationDelay: "0.1s" }} asChild>
+                  <Link to="/login">Sign In to Your Account</Link>
+                </Button>
+              </div>
             </div>
           </div>
         </section>
