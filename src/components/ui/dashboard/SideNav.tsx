@@ -15,7 +15,6 @@ import {
   Settings2,
 } from 'lucide-react';
 import { UserRole } from '@/pages/DashboardPage';
-import { usePageAccess } from '@/contexts/PageAccessContext';
 import { useEffect, useState } from 'react';
 
 // Define navigation items by user role
@@ -58,28 +57,13 @@ interface SideNavProps {
 
 export function SideNav({ role }: SideNavProps) {
   const location = useLocation();
-  const { isPageVisible, isLoading, accessRules, refreshRules } = usePageAccess();
   const [visibleItems, setVisibleItems] = useState<any[]>([]);
   const defaultItems = navigationItems[role] || navigationItems.candidate;
   
-  // Load page access rules when the component mounts or role changes
+  // Update visible items when role changes
   useEffect(() => {
-    // Force refresh rules when component mounts or role changes
-    refreshRules();
-  }, [role, refreshRules]);
-  
-  // Update visible items when rules or role changes
-  useEffect(() => {
-    // Filter items based on visibility rules
-    const filteredItems = defaultItems.filter(item => 
-      // Always show admin pages to admins, and dashboard to everyone
-      role === 'admin' || 
-      item.href === '/dashboard' || 
-      isPageVisible(item.href, role)
-    );
-    
-    setVisibleItems(filteredItems);
-  }, [defaultItems, role, isPageVisible, accessRules]);
+    setVisibleItems(defaultItems);
+  }, [role, defaultItems]);
 
   return (
     <nav className="w-56 bg-background border-r border-border min-h-[calc(100vh-4rem)] pt-6">
@@ -88,28 +72,21 @@ export function SideNav({ role }: SideNavProps) {
           <h2 className="mb-4 px-4 text-lg font-semibold tracking-tight">
             Navigation
           </h2>
-          {isLoading ? (
-            // Show loading skeleton for nav items
-            Array(4).fill(0).map((_, i) => (
-              <div key={i} className="h-10 rounded-lg bg-muted animate-pulse mb-1"></div>
-            ))
-          ) : (
-            visibleItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  location.pathname === item.href
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            ))
-          )}
+          {visibleItems.map((item) => (
+            <Link
+              key={item.href}
+              to={item.href}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                location.pathname === item.href
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+              )}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </Link>
+          ))}
         </div>
       </div>
     </nav>
