@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/ui/Header";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,24 +8,38 @@ import { Footer } from "@/components/ui/Footer";
 
 const Index = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
   
   useEffect(() => {
     const checkAuth = async () => {
       const { data } = await supabase.auth.getSession();
-      setIsLoggedIn(!!data.session);
+      const isAuthenticated = !!data.session;
+      setIsLoggedIn(isAuthenticated);
+      
+      // Redirect to dashboard if logged in
+      if (isAuthenticated) {
+        navigate("/dashboard");
+      }
     };
     
     checkAuth();
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsLoggedIn(!!session);
+      const isAuthenticated = !!session;
+      setIsLoggedIn(isAuthenticated);
+      
+      // Redirect to dashboard if logged in
+      if (isAuthenticated) {
+        navigate("/dashboard");
+      }
     });
     
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
   
+  // Only render the landing page if not logged in
   return (
     <div className="min-h-screen flex flex-col">
       <Header />

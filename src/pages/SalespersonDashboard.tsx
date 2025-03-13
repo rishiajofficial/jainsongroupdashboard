@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Header } from "@/components/ui/Header";
 import { SideNav } from "@/components/ui/dashboard/SideNav";
@@ -10,6 +11,17 @@ import { useToast } from "@/components/ui/use-toast";
 import { Link, useNavigate } from "react-router-dom";
 import { Json } from "@/integrations/supabase/types";
 import { UserRole } from "@/pages/DashboardPage";
+
+// Helper function to format dates consistently across the component
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const options: Intl.DateTimeFormatOptions = { 
+    month: 'short', 
+    day: 'numeric', 
+    year: 'numeric' 
+  };
+  return date.toLocaleDateString('en-US', options);
+};
 
 interface SupabaseShopVisit {
   id: string;
@@ -79,17 +91,6 @@ const convertSupabaseVisit = (visit: SupabaseShopVisit): ShopVisit => {
   };
 };
 
-// Helper function to format dates consistently across the component
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  const options: Intl.DateTimeFormatOptions = { 
-    month: 'short', 
-    day: 'numeric', 
-    year: 'numeric' 
-  };
-  return date.toLocaleDateString('en-US', options);
-};
-
 const SalespersonDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [salespeople, setSalespeople] = useState<Salesperson[]>([]);
@@ -123,7 +124,7 @@ const SalespersonDashboard = () => {
         .eq('id', sessionData.session.user.id)
         .single();
         
-      if (profileData?.role !== 'manager' && profileData?.role !== 'admin' && profileData?.role !== 'salesperson') {
+      if (profileData?.role !== 'manager' && profileData?.role !== 'admin') {
         toast({
           description: "Access denied. Only managers can access this dashboard",
           variant: "destructive",

@@ -1,13 +1,39 @@
 
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export function Footer() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getSession();
+      setIsAuthenticated(!!data.session);
+    };
+    
+    checkAuth();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Don't render the footer when logged in
+  if (isAuthenticated) {
+    return null;
+  }
+
   return (
     <footer className="bg-background border-t py-8">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="font-medium text-lg mb-4">SalesMan</h3>
+            <h3 className="font-medium text-lg mb-4">Jainson Group</h3>
             <p className="text-sm text-muted-foreground">
               The Sales Career Growth Platform connecting talented salespeople with companies that value performance.
             </p>
@@ -79,7 +105,7 @@ export function Footer() {
         
         <div className="border-t border-border/40 mt-8 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} SalesMan. All rights reserved.
+            © {new Date().getFullYear()} Jainson Group. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
             <Link to="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
