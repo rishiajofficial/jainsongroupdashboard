@@ -28,30 +28,6 @@ export function PublicNavigation({ variant, onClose = () => {} }: PublicNavigati
         >
           Home
         </Link>
-        
-        <Link 
-          to="/candidates" 
-          className={linkClass}
-          onClick={handleClick}
-        >
-          For Candidates
-        </Link>
-        
-        <Link 
-          to="/employers" 
-          className={linkClass}
-          onClick={handleClick}
-        >
-          For Employers
-        </Link>
-        
-        <Link 
-          to="/jobs" 
-          className={linkClass}
-          onClick={handleClick}
-        >
-          Jobs
-        </Link>
       </div>
       
       {isMobile ? (

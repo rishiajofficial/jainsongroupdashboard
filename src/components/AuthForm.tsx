@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 type AuthFormProps = {
   mode: "login" | "signup";
@@ -17,6 +18,7 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState<"candidate" | "manager" | "admin">("candidate");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -45,6 +47,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           options: {
             data: {
               full_name: fullName,
+              role: role,
             },
           },
         });
@@ -79,17 +82,41 @@ export function AuthForm({ mode }: AuthFormProps) {
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           {mode === "signup" && (
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                placeholder="John Doe"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                className="h-11"
-              />
-            </div>
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  placeholder="John Doe"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  className="h-11"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>User Role</Label>
+                <RadioGroup 
+                  value={role} 
+                  onValueChange={(value) => setRole(value as "candidate" | "manager" | "admin")}
+                  className="flex flex-col space-y-2 mt-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="candidate" id="candidate" />
+                    <Label htmlFor="candidate" className="cursor-pointer">Candidate / Salesperson</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="manager" id="manager" />
+                    <Label htmlFor="manager" className="cursor-pointer">Sales Manager</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="admin" id="admin" />
+                    <Label htmlFor="admin" className="cursor-pointer">Administrator</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            </>
           )}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>

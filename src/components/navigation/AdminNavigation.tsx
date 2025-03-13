@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Briefcase, Shield } from "lucide-react";
+import { Shield } from "lucide-react";
 
 interface AdminNavigationProps {
   variant: 'desktop' | 'mobile';
@@ -25,7 +25,7 @@ export function AdminNavigation({ variant, onClose = () => {} }: AdminNavigation
         className={linkClass}
         onClick={handleClick}
       >
-        {isMobile && <Briefcase className="h-4 w-4 inline mr-2" />}
+        {isMobile && <Shield className="h-4 w-4 inline mr-2" />}
         Dashboard
       </Link>
       
@@ -36,15 +36,6 @@ export function AdminNavigation({ variant, onClose = () => {} }: AdminNavigation
       >
         {isMobile && <Shield className="h-4 w-4 inline mr-2" />}
         Manager Approvals
-      </Link>
-      
-      <Link 
-        to="/jobs" 
-        className={linkClass}
-        onClick={handleClick}
-      >
-        {isMobile && <Briefcase className="h-4 w-4 inline mr-2" />}
-        View All Jobs
       </Link>
     </div>
   );
