@@ -4,10 +4,11 @@ import { Menu, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { HeaderLogo } from "./HeaderLogo";
-import { DesktopNavigation } from "./DesktopNavigation";
+import { UserMenu } from "./UserMenu";
 import { MobileMenu } from "./MobileMenu";
+import { PublicNavigation } from "@/components/navigation/PublicNavigation";
 
-type UserRole = 'candidate' | 'manager' | 'admin';
+type UserRole = 'candidate' | 'salesperson' | 'manager' | 'admin';
 
 interface UserData {
   email?: string;
@@ -135,20 +136,22 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 max-w-screen-2xl items-center justify-between">
+      <div className="container flex h-16 max-w-screen-2xl items-center">
         <div className="flex items-center gap-2">
           <HeaderLogo />
         </div>
 
-        {/* Desktop navigation */}
-        <DesktopNavigation 
-          isAuthenticated={isAuthenticated} 
-          user={user} 
-          onLogout={handleLogout} 
-        />
+        {/* Desktop navigation - Now simplified to just auth controls */}
+        <div className="hidden md:flex items-center justify-end flex-1">
+          {!isAuthenticated ? (
+            <PublicNavigation variant="desktop" />
+          ) : (
+            <UserMenu user={user} onLogout={handleLogout} />
+          )}
+        </div>
 
         {/* Mobile menu button */}
-        <button className="md:hidden p-2" onClick={toggleMobileMenu}>
+        <button className="md:hidden ml-auto p-2" onClick={toggleMobileMenu}>
           {isMobileMenuOpen ? (
             <X className="h-6 w-6" />
           ) : (

@@ -84,6 +84,7 @@ const SalespersonDashboard = () => {
   const [recentVisits, setRecentVisits] = useState<ShopVisit[]>([]);
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month'>('today');
+  const [role, setRole] = useState<'candidate' | 'salesperson' | 'manager' | 'admin'>('manager');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -114,6 +115,7 @@ const SalespersonDashboard = () => {
           description: "Access denied. Only managers can access this dashboard",
           variant: "destructive",
         });
+        navigate('/dashboard');
         return;
       }
       
@@ -249,13 +251,13 @@ const SalespersonDashboard = () => {
   };
 
   const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
     const options: Intl.DateTimeFormatOptions = { 
-      weekday: 'short', 
       month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
+      day: 'numeric', 
+      year: 'numeric' 
     };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+    return date.toLocaleDateString('en-US', options);
   };
 
   return (
@@ -527,15 +529,6 @@ const StatsCards = ({ data, isLoading }: { data: DailyStats[]; isLoading: boolea
       </Card>
     </>
   );
-};
-
-const formatDate = (dateString: string) => {
-  const options: Intl.DateTimeFormatOptions = { 
-    month: 'short', 
-    day: 'numeric',
-    year: 'numeric'
-  };
-  return new Date(dateString).toLocaleDateString(undefined, options);
 };
 
 export default SalespersonDashboard;

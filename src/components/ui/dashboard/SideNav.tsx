@@ -1,5 +1,4 @@
 
-import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
@@ -7,6 +6,7 @@ import {
   Briefcase,
   ClipboardCheck,
   FileText,
+  LayoutDashboard,
   Map,
   ShoppingBag,
   Users,
@@ -16,21 +16,25 @@ import {
 // Define navigation items by user role
 const navigationItems = {
   candidate: [
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/jobs", label: "Browse Jobs", icon: Briefcase },
     { href: "/applications", label: "My Applications", icon: FileText },
     { href: "/assessments/candidate", label: "My Assessments", icon: ClipboardCheck },
   ],
   salesperson: [
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/salesperson-tracker", label: "Record a Visit", icon: Map },
     { href: "/salesperson-stats", label: "My Stats", icon: BarChart4 },
   ],
   manager: [
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/applications/review", label: "Review Candidates", icon: UserCheck },
     { href: "/jobs/manage", label: "Manage Jobs", icon: Briefcase },
     { href: "/salesperson-dashboard", label: "Review Salespersons", icon: Users },
     { href: "/manager-stats", label: "Statistics", icon: BarChart4 },
   ],
   admin: [
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/approvals", label: "Manager Approvals", icon: UserCheck },
     { href: "/admin/users", label: "User Management", icon: Users },
     { href: "/admin/jobs", label: "Jobs Overview", icon: Briefcase },
@@ -47,10 +51,10 @@ export function SideNav({ role }: SideNavProps) {
   const items = navigationItems[role] || navigationItems.candidate;
 
   return (
-    <nav className="w-56 bg-background border-r border-border h-[calc(100vh-4rem)] sticky top-16 pt-6 hidden md:block">
+    <nav className="w-56 bg-background border-r border-border min-h-[calc(100vh-4rem)] pt-6">
       <div className="px-3 py-2">
         <div className="space-y-1">
-          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
+          <h2 className="mb-4 px-4 text-lg font-semibold tracking-tight">
             Navigation
           </h2>
           {items.map((item) => (

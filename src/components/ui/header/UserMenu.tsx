@@ -1,9 +1,6 @@
 
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogOut, User, Settings } from "lucide-react";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { LogOut, User } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,7 +35,6 @@ const getRoleBadgeVariant = (role: UserRole) => {
     case 'manager':
       return 'default';
     case 'salesperson':
-      // Changed from 'warning' to 'secondary' as 'warning' is not a valid variant
       return 'secondary';
     case 'candidate':
     default:
@@ -77,17 +73,9 @@ export function UserMenu({ user, onLogout }: UserMenuProps) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/dashboard")}>
-                  <User className="h-4 w-4 mr-2" />
-                  Dashboard
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/user-profile")}>
                   <User className="h-4 w-4 mr-2" />
                   Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/settings")}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={onLogout}>
