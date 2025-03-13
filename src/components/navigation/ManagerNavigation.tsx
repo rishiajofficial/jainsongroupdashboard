@@ -89,7 +89,7 @@ export function ManagerNavigation({ variant, onClose = () => {} }: ManagerNaviga
         Sales Tracking
       </Link>
       
-      {/* New Training Management Link */}
+      {/* Training Management Link */}
       <Link 
         to="/training/manage" 
         className={linkClass}

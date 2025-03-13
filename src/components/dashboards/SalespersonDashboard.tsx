@@ -58,7 +58,7 @@ export function SalespersonDashboard({ userData }: { userData: ProfileData | nul
         </CardContent>
       </Card>
       
-      {/* New Training Videos Card */}
+      {/* Training Videos Card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">

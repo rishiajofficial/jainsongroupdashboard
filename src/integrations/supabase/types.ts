@@ -435,6 +435,147 @@ export type Database = {
         }
         Relationships: []
       }
+      training_progress: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          id: string
+          last_position: number
+          last_updated_at: string | null
+          quiz_completed: boolean
+          quiz_score: number | null
+          user_id: string
+          video_id: string
+          watched_percentage: number
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          id?: string
+          last_position?: number
+          last_updated_at?: string | null
+          quiz_completed?: boolean
+          quiz_score?: number | null
+          user_id: string
+          video_id: string
+          watched_percentage?: number
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          id?: string
+          last_position?: number
+          last_updated_at?: string | null
+          quiz_completed?: boolean
+          quiz_score?: number | null
+          user_id?: string
+          video_id?: string
+          watched_percentage?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_progress_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "training_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_quiz_options: {
+        Row: {
+          id: string
+          is_correct: boolean
+          option_text: string
+          order_number: number
+          question_id: string
+        }
+        Insert: {
+          id?: string
+          is_correct?: boolean
+          option_text: string
+          order_number: number
+          question_id: string
+        }
+        Update: {
+          id?: string
+          is_correct?: boolean
+          option_text?: string
+          order_number?: number
+          question_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_quiz_options_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "training_quiz_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_quiz_questions: {
+        Row: {
+          created_at: string
+          id: string
+          question: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_quiz_questions_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "training_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_videos: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          has_quiz: boolean | null
+          id: string
+          thumbnail_url: string | null
+          title: string
+          video_url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          has_quiz?: boolean | null
+          id?: string
+          thumbnail_url?: string | null
+          title: string
+          video_url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          has_quiz?: boolean | null
+          id?: string
+          thumbnail_url?: string | null
+          title?: string
+          video_url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
