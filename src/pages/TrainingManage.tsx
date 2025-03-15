@@ -1,146 +1,23 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Header } from "@/components/ui/Header";
 import { SideNav } from "@/components/ui/dashboard/SideNav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { Edit, Trash2, Plus, Video } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { Plus } from "lucide-react";
 import { TrainingVideoForm } from "@/components/training/TrainingVideoForm";
-import { Badge } from "@/components/ui/badge";
+import { VideoCardList } from "@/components/training/VideoCardList";
+import { QuizManagement } from "@/components/training/QuizManagement";
+import { useTrainingManager } from "@/hooks/useTrainingManager";
 
 export default function TrainingManage() {
-  const [role, setRole] = useState<string>('manager');
+  const { role, videos, loading, refreshVideos } = useTrainingManager();
   const [activeTab, setActiveTab] = useState<string>("videos");
-  const [videos, setVideos] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
   const [showAddForm, setShowAddForm] = useState<boolean>(false);
-  const { toast } = useToast();
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoading(true);
-        
-        // Get user session
-        const { data: sessionData } = await supabase.auth.getSession();
-        
-        if (sessionData.session) {
-          // Get user role
-          const { data: userData } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', sessionData.session.user.id)
-            .single();
-            
-          if (userData) {
-            setRole(userData.role);
-          }
-        }
-        
-        // Fetch training videos
-        const { data: videosData, error: videosError } = await supabase
-          .from('training_videos')
-          .select('*')
-          .order('created_at', { ascending: false });
-          
-        if (videosError) throw videosError;
-        
-        setVideos(videosData || []);
-      } catch (error) {
-        console.error('Error fetching training data:', error);
-        toast({
-          description: "Failed to load training data",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    }
-    
-    fetchData();
-  }, []);
-  
-  const handleDeleteVideo = async (id: string) => {
-    try {
-      // First, delete associated quiz questions and options
-      // Delete quiz options for the video
-      const { data: quizQuestions } = await supabase
-        .from('training_quiz_questions')
-        .select('id')
-        .eq('video_id', id);
-      
-      if (quizQuestions && quizQuestions.length > 0) {
-        const questionIds = quizQuestions.map(q => q.id);
-        
-        // Delete quiz options linked to those questions
-        const { error: quizOptionsError } = await supabase
-          .from('training_quiz_options')
-          .delete()
-          .in('question_id', questionIds);
-          
-        if (quizOptionsError) throw quizOptionsError;
-        
-        // Delete quiz questions
-        const { error: quizQuestionsError } = await supabase
-          .from('training_quiz_questions')
-          .delete()
-          .eq('video_id', id);
-          
-        if (quizQuestionsError) throw quizQuestionsError;
-      }
-      
-      // Delete progress records
-      const { error: progressError } = await supabase
-        .from('training_progress')
-        .delete()
-        .eq('video_id', id);
-        
-      if (progressError) throw progressError;
-      
-      // Finally, delete the video
-      const { error: videoError } = await supabase
-        .from('training_videos')
-        .delete()
-        .eq('id', id);
-        
-      if (videoError) throw videoError;
-      
-      // Update the UI
-      setVideos(videos.filter(video => video.id !== id));
-      
-      toast({
-        description: "Training video deleted successfully",
-      });
-    } catch (error) {
-      console.error('Error deleting training video:', error);
-      toast({
-        description: "Failed to delete training video",
-        variant: "destructive",
-      });
-    }
-  };
-  
-  const refreshVideos = async () => {
-    try {
-      setLoading(true);
-      
-      const { data, error } = await supabase
-        .from('training_videos')
-        .select('*')
-        .order('created_at', { ascending: false });
-        
-      if (error) throw error;
-      
-      setVideos(data || []);
-      setShowAddForm(false);
-    } catch (error) {
-      console.error('Error refreshing videos:', error);
-    } finally {
-      setLoading(false);
-    }
+  const handleFormComplete = async () => {
+    await refreshVideos();
+    setShowAddForm(false);
   };
 
   return (
@@ -162,7 +39,7 @@ export default function TrainingManage() {
             
             {showAddForm ? (
               <div className="mb-6">
-                <TrainingVideoForm onComplete={refreshVideos} />
+                <TrainingVideoForm onComplete={handleFormComplete} />
                 <div className="mt-4 flex justify-end">
                   <Button variant="outline" onClick={() => setShowAddForm(false)}>
                     Cancel
@@ -177,96 +54,15 @@ export default function TrainingManage() {
                 </TabsList>
                 
                 <TabsContent value="videos" className="space-y-6">
-                  {loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {[1, 2, 3].map(i => (
-                        <Card key={i} className="animate-pulse">
-                          <CardHeader>
-                            <div className="h-6 bg-muted rounded w-3/4"></div>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="h-4 bg-muted rounded w-1/2 mb-2"></div>
-                            <div className="h-4 bg-muted rounded w-full"></div>
-                          </CardContent>
-                          <CardFooter>
-                            <div className="h-9 bg-muted rounded w-1/4"></div>
-                          </CardFooter>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : videos.length === 0 ? (
-                    <Card className="text-center p-6">
-                      <CardHeader>
-                        <CardTitle className="flex justify-center">
-                          <Video className="h-10 w-10 mb-2" />
-                        </CardTitle>
-                        <CardTitle>No Training Videos</CardTitle>
-                        <CardDescription>
-                          Add your first training video to get started
-                        </CardDescription>
-                      </CardHeader>
-                      <CardFooter className="flex justify-center">
-                        <Button onClick={() => setShowAddForm(true)}>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add New Video
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {videos.map((video) => (
-                        <Card key={video.id} className="flex flex-col">
-                          <CardHeader className="pb-2">
-                            <div className="flex justify-between">
-                              <CardTitle className="text-xl">{video.title}</CardTitle>
-                              <div className="flex flex-wrap space-x-2">
-                                <Badge variant="outline">{video.category || "Uncategorized"}</Badge>
-                                {video.has_quiz && (
-                                  <Badge variant="secondary">Has Quiz</Badge>
-                                )}
-                              </div>
-                            </div>
-                            <CardDescription>
-                              Added on {new Date(video.created_at).toLocaleDateString()}
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="flex-grow pb-2">
-                            <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                              {video.description || "No description provided"}
-                            </p>
-                            <div className="text-xs">
-                              <div className="font-medium">Video URL:</div>
-                              <div className="text-muted-foreground break-all truncate">{video.video_url}</div>
-                            </div>
-                          </CardContent>
-                          <CardFooter className="pt-2 flex justify-end space-x-2">
-                            <Button 
-                              variant="destructive" 
-                              size="sm"
-                              onClick={() => handleDeleteVideo(video.id)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </Button>
-                          </CardFooter>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
+                  <VideoCardList 
+                    videos={videos} 
+                    loading={loading}
+                    onRefresh={refreshVideos}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="quizzes" className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Quiz Management</CardTitle>
-                      <CardDescription>
-                        Create and manage quizzes for training videos
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p>Quiz management features coming soon.</p>
-                    </CardContent>
-                  </Card>
+                  <QuizManagement />
                 </TabsContent>
               </Tabs>
             )}
