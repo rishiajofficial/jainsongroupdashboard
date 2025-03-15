@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Play, Video, BookOpen, CheckCircle, XCircle } from "lucide-react";
+import { Play, Video, BookOpen, CheckCircle, XCircle, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,10 @@ export const VideoCard = ({ video }: VideoCardProps) => {
   
   const handleWatchVideo = () => {
     navigate(`/training/video/${video.id}`);
+  };
+
+  const handleTakeQuiz = () => {
+    navigate(`/training/video/${video.id}?quiz=true`);
   };
 
   return (
@@ -109,7 +113,7 @@ export const VideoCard = ({ video }: VideoCardProps) => {
           </div>
         )}
       </CardFooter>
-      <div className="px-6 pb-4">
+      <div className="px-6 pb-4 flex flex-col gap-2">
         <Button
           variant="outline"
           className="w-full"
@@ -117,6 +121,16 @@ export const VideoCard = ({ video }: VideoCardProps) => {
         >
           {video.progress?.completed ? "Review Video" : "Watch Video"}
         </Button>
+        
+        {/* Add Go to Quiz button if the video has a quiz */}
+        {video.has_quiz && video.progress?.watched_percentage >= 50 && !video.progress?.quiz_completed && (
+          <Button
+            className="w-full"
+            onClick={handleTakeQuiz}
+          >
+            <GraduationCap className="mr-2 h-4 w-4" /> Go to Quiz
+          </Button>
+        )}
       </div>
     </Card>
   );

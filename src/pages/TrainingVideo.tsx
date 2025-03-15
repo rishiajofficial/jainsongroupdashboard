@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Header } from "@/components/ui/Header";
 import { SideNav } from "@/components/ui/dashboard/SideNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -8,12 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, PlayCircle, PauseCircle, ChevronRight, XCircle } from "lucide-react";
+import { ArrowLeft, PlayCircle, PauseCircle, ChevronRight, XCircle, GraduationCap } from "lucide-react";
 import { Quiz } from "@/components/training/Quiz";
 import { Badge } from "@/components/ui/badge";
 
 export default function TrainingVideo() {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const shouldShowQuiz = queryParams.get('quiz') === 'true';
+  
   const [role, setRole] = useState('salesperson');
   const [isLoading, setIsLoading] = useState(true);
   const [videoData, setVideoData] = useState<any>(null);
@@ -21,7 +25,7 @@ export default function TrainingVideo() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [showQuiz, setShowQuiz] = useState(false);
+  const [showQuiz, setShowQuiz] = useState(shouldShowQuiz);
   const [quizData, setQuizData] = useState<any[]>([]);
   const [lastProgressUpdate, setLastProgressUpdate] = useState(0);
   const [progressUpdateCount, setProgressUpdateCount] = useState(0);
@@ -118,9 +122,12 @@ export default function TrainingVideo() {
         setVideoData(video);
         setQuizData(quiz || []);
         
-        // Show quiz if the user has already watched most of the video 
+        // Show quiz if the URL has the quiz parameter, or 
+        // if the user has already watched most of the video 
         // but hasn't completed the quiz yet
-        if (progress && progress.watched_percentage >= 90 && 
+        if (shouldShowQuiz) {
+          setShowQuiz(true);
+        } else if (progress && progress.watched_percentage >= 90 && 
             !progress.quiz_completed && quiz && quiz.length > 0) {
           setShowQuiz(true);
         }
@@ -141,7 +148,7 @@ export default function TrainingVideo() {
     return () => {
       saveProgress();
     };
-  }, [id]);
+  }, [id, shouldShowQuiz]);
   
   const saveProgress = async () => {
     if (!videoRef.current || !userProgress || !videoData) return;
@@ -304,6 +311,21 @@ export default function TrainingVideo() {
         
       if (error) throw error;
       
+      // Also save to training_quiz_results for reporting
+      if (id) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData.session) {
+          await supabase
+            .from('training_quiz_results')
+            .insert({
+              user_id: sessionData.session.user.id,
+              video_id: id,
+              total_questions: quizData.length,
+              score: score
+            });
+        }
+      }
+      
       setUserProgress(data);
       setShowQuiz(false);
       
@@ -418,9 +440,9 @@ export default function TrainingVideo() {
                 </div>
                 
                 <div className="flex space-x-2 mt-4 justify-center">
-                  {quizData.length > 0 && userProgress?.watched_percentage >= 50 && (
-                    <Button onClick={handleTakeQuiz}>
-                      Start Quiz <ChevronRight className="ml-1 h-4 w-4" />
+                  {quizData.length > 0 && userProgress?.watched_percentage >= 50 && !userProgress?.quiz_completed && (
+                    <Button onClick={handleTakeQuiz} className="gap-2">
+                      <GraduationCap className="h-4 w-4" /> Start Quiz
                     </Button>
                   )}
                   <Button variant="outline" onClick={handleQuitTraining}>
@@ -429,17 +451,24 @@ export default function TrainingVideo() {
                 </div>
                 
                 <Card>
-                  <CardHeader>
-                    <CardTitle>{videoData?.title}</CardTitle>
-                    <CardDescription>
-                      {userProgress?.completed ? (
-                        <span className="text-green-500">You've completed this training!</span>
-                      ) : quizData.length > 0 ? (
-                        <span>Watch the entire video to take the quiz</span>
-                      ) : (
-                        <span>Watch the entire video to complete this training</span>
-                      )}
-                    </CardDescription>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <div>
+                      <CardTitle>{videoData?.title}</CardTitle>
+                      <CardDescription>
+                        {userProgress?.completed ? (
+                          <span className="text-green-500">You've completed this training!</span>
+                        ) : quizData.length > 0 ? (
+                          <span>Watch the entire video to take the quiz</span>
+                        ) : (
+                          <span>Watch the entire video to complete this training</span>
+                        )}
+                      </CardDescription>
+                    </div>
+                    {quizData.length > 0 && userProgress?.watched_percentage >= 50 && !userProgress?.quiz_completed && (
+                      <Button onClick={handleTakeQuiz} size="sm" className="gap-2">
+                        <GraduationCap className="h-4 w-4" /> Go to Quiz
+                      </Button>
+                    )}
                   </CardHeader>
                   <CardContent>
                     <div className="prose max-w-none">
@@ -448,7 +477,7 @@ export default function TrainingVideo() {
                   </CardContent>
                   {quizData.length > 0 && userProgress?.watched_percentage >= 50 && !userProgress?.quiz_completed && (
                     <CardFooter>
-                      <Button onClick={handleTakeQuiz}>
+                      <Button onClick={handleTakeQuiz} className="w-full">
                         Take Quiz Now
                       </Button>
                     </CardFooter>
