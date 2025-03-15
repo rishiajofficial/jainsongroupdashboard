@@ -1,112 +1,120 @@
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Home, GraduationCap, Briefcase, Users, Settings } from "lucide-react";
 
-import { Link, useLocation } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
-  BarChart4,
-  Briefcase,
-  ClipboardCheck,
-  FileText,
-  GraduationCap,
-  LayoutDashboard,
-  Map,
-  ShoppingBag,
-  Users,
-  UserCheck,
-  Settings2,
-} from 'lucide-react';
-import { UserRole } from '@/pages/DashboardPage';
-import { useEffect, useState } from 'react';
-import { usePageAccess } from '@/contexts/PageAccessContext';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-// Define navigation items by user role
-const navigationItems = {
-  candidate: [
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/jobs", label: "Browse Jobs", icon: Briefcase },
-    { href: "/applications", label: "My Applications", icon: FileText },
-    { href: "/assessments", label: "My Assessments", icon: ClipboardCheck },
-    { href: "/profile", label: "My Profile", icon: Users },
-  ],
-  salesperson: [
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/salesperson/tracker", label: "Record a Visit", icon: Map },
-    { href: "/training", label: "Training Videos", icon: GraduationCap },
-    { href: "/profile", label: "My Profile", icon: Users },
-  ],
-  manager: [
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/applications/review", label: "Review Candidates", icon: UserCheck },
-    { href: "/jobs/manage", label: "Manage Jobs", icon: Briefcase },
-    { href: "/training", label: "Training Videos", icon: GraduationCap },
-    { href: "/training/manage", label: "Manage Training", icon: GraduationCap },
-    { href: "/training/performance", label: "Training Performance", icon: ClipboardCheck },
-    { href: "/profile", label: "My Profile", icon: Users },
-  ],
-  admin: [
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/users", label: "User Management", icon: Users },
-    { href: "/admin/approvals", label: "Manager Approvals", icon: UserCheck },
-    { href: "/admin/page-access", label: "Page Access", icon: FileText },
-    { href: "/admin/dashboard-settings", label: "Dashboard Settings", icon: Settings2 },
-    { href: "/training", label: "Training Videos", icon: GraduationCap },
-    { href: "/profile", label: "My Profile", icon: Users },
-  ]
-};
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
+
+interface NavItem {
+  id: string;
+  label: string;
+  icon: React.ComponentType<any>;
+  path: string;
+  roles: string[];
+}
 
 interface SideNavProps {
-  role: UserRole;
+  role: string;
 }
+
+const NAV_ITEMS: NavItem[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: Home, path: '/dashboard', roles: ['salesperson', 'manager', 'admin'] },
+  { id: 'training', label: 'Training Videos', icon: GraduationCap, path: '/training', roles: ['salesperson', 'manager'] },
+  { id: 'jobs', label: 'Job Postings', icon: Briefcase, path: '/jobs', roles: ['salesperson'] },
+  { id: 'applications', label: 'My Applications', icon: Users, path: '/applications', roles: ['salesperson'] },
+  { id: 'admin-approvals', label: 'Approvals', icon: Users, path: '/admin/approvals', roles: ['admin'] },
+  { id: 'admin-users', label: 'Manage Users', icon: Users, path: '/admin/users', roles: ['admin'] },
+  { id: 'admin-settings', label: 'Dashboard Settings', icon: Settings, path: '/admin/settings', roles: ['admin'] },
+  { id: 'admin-page-access', label: 'Page Access', icon: Settings, path: '/admin/page-access', roles: ['admin'] },
+];
 
 export function SideNav({ role }: SideNavProps) {
   const location = useLocation();
-  const [visibleItems, setVisibleItems] = useState<any[]>([]);
-  const { isPageVisible, refreshRules } = usePageAccess();
-  const defaultItems = navigationItems[role] || navigationItems.candidate;
-  
-  // Update visible items when role changes and check visibility
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [user, setUser] = useState<any>(null);
+
   useEffect(() => {
-    // Filter items based on page access rules
-    const filteredItems = defaultItems.filter(item => {
-      // Dashboard and profile are always visible
-      if (item.href === '/dashboard' || item.href === '/profile') {
-        return true;
-      }
-      
-      return isPageVisible(item.href, role);
-    });
-    
-    setVisibleItems(filteredItems);
-  }, [role, defaultItems, isPageVisible]);
-  
-  // Refresh rules when component mounts
-  useEffect(() => {
-    refreshRules();
-  }, [refreshRules]);
+    const fetchUser = async () => {
+      const { data: session } = await supabase.auth.getSession();
+      setUser(session.session?.user);
+    };
+
+    fetchUser();
+  }, []);
+
+  const filteredNavItems = NAV_ITEMS.filter(item => item.roles.includes(role));
+
+  const handleSignOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        title: "Error signing out",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        description: "Signed out successfully",
+      });
+      navigate("/login");
+    }
+  };
 
   return (
-    <nav className="w-56 bg-background border-r border-border min-h-[calc(100vh-4rem)] pt-6">
-      <div className="px-3 py-2">
+    <div className="flex flex-col w-64 border-r flex-shrink-0">
+      <div className="flex-1 flex flex-col space-y-3 p-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold tracking-tight">Acme Co.</h1>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="rounded-full h-8 w-8 p-0">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user?.user_metadata?.avatar_url} />
+                  <AvatarFallback>{user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>{user?.email}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/profile')}>Profile</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/settings')}>Settings</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
         <div className="space-y-1">
-          <h2 className="mb-4 px-4 text-lg font-semibold tracking-tight">
-            Navigation
-          </h2>
-          {visibleItems.map((item) => (
-            <Link
-              key={item.href}
-              to={item.href}
+          {filteredNavItems.map(item => (
+            <Button
+              key={item.id}
+              variant="ghost"
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                location.pathname === item.href
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                "justify-start",
+                location.pathname === item.path ? "font-semibold" : "text-muted-foreground",
               )}
+              onClick={() => navigate(item.path)}
             >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </Link>
+              <item.icon className="mr-2 h-4 w-4" />
+              <span>{item.label}</span>
+            </Button>
           ))}
         </div>
       </div>
-    </nav>
+    </div>
   );
 }
