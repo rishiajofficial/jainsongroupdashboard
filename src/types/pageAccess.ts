@@ -1,180 +1,50 @@
 
 import { UserRole } from "@/pages/DashboardPage";
 
-export interface PageAccess {
-  id: string;
-  path: string;
-  label: string;
-  roles: string[];
-}
-
 export interface PageAccessRule {
   id: string;
   page_path: string;
   page_name: string;
   allowed_roles: UserRole[];
   is_enabled: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export interface ConfigurablePage {
+export interface PageConfig {
   path: string;
   name: string;
-  defaultRoles: UserRole[];
   description: string;
+  defaultRoles: UserRole[];
 }
 
-export const CONFIGURABLE_PAGES: ConfigurablePage[] = [
-  {
-    path: '/dashboard',
-    name: 'Dashboard',
-    defaultRoles: ['salesperson', 'manager', 'admin', 'candidate'],
-    description: 'Main dashboard page showing overview of system'
-  },
-  {
-    path: '/training',
-    name: 'Training Videos',
-    defaultRoles: ['salesperson', 'manager'],
-    description: 'Access to training video library'
-  },
-  {
-    path: '/training/manage',
-    name: 'Manage Training',
-    defaultRoles: ['manager', 'admin'],
-    description: 'Upload and manage training videos'
-  },
-  {
-    path: '/training/performance',
-    name: 'Training Performance',
-    defaultRoles: ['manager', 'admin'],
-    description: 'View training completion statistics'
-  },
-  {
-    path: '/jobs',
-    name: 'Job Postings',
-    defaultRoles: ['candidate', 'manager', 'admin'],
-    description: 'View available job postings'
-  },
-  {
-    path: '/jobs/manage',
-    name: 'Manage Jobs',
-    defaultRoles: ['manager', 'admin'],
-    description: 'Create and manage job postings'
-  },
-  {
-    path: '/applications',
-    name: 'Applications',
-    defaultRoles: ['manager', 'admin'],
-    description: 'View and manage job applications'
-  },
-  {
-    path: '/admin/approvals',
-    name: 'Admin Approvals',
-    defaultRoles: ['admin'],
-    description: 'Approve access requests'
-  },
-  {
-    path: '/admin/users',
-    name: 'Admin Users',
-    defaultRoles: ['admin'],
-    description: 'Manage user accounts'
-  },
-  {
-    path: '/admin/dashboard-settings',
-    name: 'Admin Dashboard Settings',
-    defaultRoles: ['admin'],
-    description: 'Configure dashboard widgets and settings'
-  },
-  {
-    path: '/admin/page-access',
-    name: 'Admin Page Access',
-    defaultRoles: ['admin'],
-    description: 'Control page visibility for different user roles'
-  },
-  {
-    path: '/profile',
-    name: 'User Profile',
-    defaultRoles: ['salesperson', 'manager', 'admin', 'candidate'],
-    description: 'View and edit user profile'
-  },
-  {
-    path: '/settings',
-    name: 'Settings',
-    defaultRoles: ['salesperson', 'manager', 'admin', 'candidate'],
-    description: 'User application settings'
-  }
-];
-
-export const pageAccessList: PageAccess[] = [
-  {
-    id: 'dashboard',
-    path: '/dashboard',
-    label: 'Dashboard',
-    roles: ['salesperson', 'manager', 'admin'],
-  },
-  {
-    id: 'training',
-    path: '/training',
-    label: 'Training Videos',
-    roles: ['salesperson', 'manager'],
-  },
-  {
-    id: 'training-manage',
-    path: '/training/manage',
-    label: 'Manage Training',
-    roles: ['manager'],
-  },
-  {
-    id: 'jobs',
-    path: '/jobs',
-    label: 'Job Postings',
-    roles: ['salesperson', 'manager'],
-  },
-  {
-    id: 'jobs-manage',
-    path: '/jobs/manage',
-    label: 'Manage Jobs',
-    roles: ['manager', 'admin'],
-  },
-  {
-    id: 'applications',
-    path: '/applications',
-    label: 'Applications',
-    roles: ['manager'],
-  },
-  {
-    id: 'admin-approvals',
-    path: '/admin/approvals',
-    label: 'Admin Approvals',
-    roles: ['admin'],
-  },
-  {
-    id: 'admin-users',
-    path: '/admin/users',
-    label: 'Admin Users',
-    roles: ['admin'],
-  },
-  {
-    id: 'admin-page-access',
-    path: '/admin/page-access',
-    label: 'Admin Page Access',
-    roles: ['admin'],
-  },
-  {
-    id: 'admin-dashboard-settings',
-    path: '/admin/dashboard-settings',
-    label: 'Admin Dashboard Settings',
-    roles: ['admin'],
-  },
-  {
-    id: 'profile',
-    path: '/profile',
-    label: 'User Profile',
-    roles: ['salesperson', 'manager', 'admin'],
-  },
-  {
-    id: 'settings',
-    path: '/settings',
-    label: 'Settings',
-    roles: ['salesperson', 'manager', 'admin'],
-  },
+// Define all configurable pages in the system
+export const CONFIGURABLE_PAGES: PageConfig[] = [
+  // Candidate Pages
+  { path: "/dashboard", name: "Dashboard", description: "Main dashboard page", defaultRoles: ['candidate', 'salesperson', 'manager', 'admin'] },
+  { path: "/jobs", name: "Browse Jobs", description: "View available job listings", defaultRoles: ['candidate'] },
+  { path: "/applications", name: "My Applications", description: "View submitted applications", defaultRoles: ['candidate'] },
+  { path: "/assessments/candidate", name: "My Assessments", description: "Take assigned assessments", defaultRoles: ['candidate'] },
+  { path: "/salesperson-tracker", name: "Track Visits", description: "Record shop visits", defaultRoles: ['candidate', 'salesperson'] },
+  { path: "/training", name: "Training Videos", description: "Access training materials", defaultRoles: ['salesperson', 'manager', 'admin'] },
+  
+  // Salesperson Pages
+  { path: "/salesperson-stats", name: "Salesperson Stats", description: "View sales performance metrics", defaultRoles: ['salesperson', 'manager'] },
+  
+  // Manager Pages
+  { path: "/jobs/manage", name: "Manage Jobs", description: "Create and manage job listings", defaultRoles: ['manager'] },
+  { path: "/applications/review", name: "Review Applications", description: "Review job applications", defaultRoles: ['manager'] },
+  { path: "/assessments/templates", name: "Assessment Templates", description: "Manage assessment templates", defaultRoles: ['manager'] },
+  { path: "/assessments/assign", name: "Assign Assessments", description: "Assign assessments to candidates", defaultRoles: ['manager'] },
+  { path: "/salesperson-dashboard", name: "Sales Tracking Dashboard", description: "Monitor salesperson activities", defaultRoles: ['manager'] },
+  { path: "/training/manage", name: "Training Management", description: "Manage training content", defaultRoles: ['manager'] },
+  { path: "/training/performance", name: "Training Performance", description: "View training performance metrics", defaultRoles: ['manager'] },
+  
+  // Admin Pages
+  { path: "/admin/approvals", name: "Manager Approvals", description: "Approve manager requests", defaultRoles: ['admin'] },
+  { path: "/admin/users", name: "User Management", description: "Manage system users", defaultRoles: ['admin'] },
+  { path: "/admin/jobs", name: "Jobs Overview", description: "Overview of all jobs", defaultRoles: ['admin'] },
+  { path: "/admin/stats", name: "Platform Stats", description: "View platform statistics", defaultRoles: ['admin'] },
+  { path: "/settings", name: "Settings", description: "User settings", defaultRoles: ['candidate', 'salesperson', 'manager', 'admin'] },
+  { path: "/profile", name: "User Profile", description: "User profile page", defaultRoles: ['candidate', 'salesperson', 'manager', 'admin'] },
 ];
