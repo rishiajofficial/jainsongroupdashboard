@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, Video } from "lucide-react";
+import { Edit, Trash2, Video, FileQuestion } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -124,7 +124,10 @@ export const VideoCardList = ({ videos, loading, onRefresh }: VideoCardListProps
               <div className="flex flex-wrap space-x-2">
                 <Badge variant="outline">{video.category || "Uncategorized"}</Badge>
                 {video.has_quiz && (
-                  <Badge variant="secondary">Has Quiz</Badge>
+                  <Badge variant="secondary" className="flex items-center">
+                    <FileQuestion className="h-3 w-3 mr-1" />
+                    Quiz
+                  </Badge>
                 )}
               </div>
             </div>

@@ -1,11 +1,10 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, FileQuestion } from "lucide-react";
+import { FileQuestion } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { QuizForm } from "./quiz/QuizForm";
@@ -15,6 +14,7 @@ export const QuizManagement = () => {
   const [loading, setLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [showQuizForm, setShowQuizForm] = useState(false);
+  const [existingQuestions, setExistingQuestions] = useState<any[]>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -44,17 +44,84 @@ export const QuizManagement = () => {
     fetchVideos();
   }, []);
 
-  const handleAddQuiz = (videoId: string) => {
+  const fetchExistingQuestions = async (videoId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('training_quiz_questions')
+        .select(`
+          id,
+          question,
+          training_quiz_options (
+            id,
+            option_text,
+            is_correct
+          )
+        `)
+        .eq('video_id', videoId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      
+      // Transform data for QuizForm
+      const formattedQuestions = data.map(q => ({
+        question: q.question,
+        options: q.training_quiz_options.map(o => ({
+          option_text: o.option_text,
+          is_correct: o.is_correct
+        }))
+      }));
+      
+      setExistingQuestions(formattedQuestions);
+      return formattedQuestions;
+    } catch (error) {
+      console.error('Error fetching quiz questions:', error);
+      toast({
+        description: "Could not load existing quiz questions",
+        variant: "destructive",
+      });
+      return [];
+    }
+  };
+
+  const handleAddOrEditQuiz = async (videoId: string) => {
     setSelectedVideo(videoId);
+    
+    // For existing quizzes, load the questions first
+    const videoWithQuiz = videos.find(v => v.id === videoId && v.has_quiz);
+    if (videoWithQuiz) {
+      await fetchExistingQuestions(videoId);
+    } else {
+      setExistingQuestions([]);
+    }
+    
     setShowQuizForm(true);
   };
 
   const handleQuizFormComplete = () => {
     setShowQuizForm(false);
     setSelectedVideo(null);
-    toast({
-      description: "Quiz created successfully",
-    });
+    setExistingQuestions([]);
+    
+    // Refresh the video list to update has_quiz status
+    const fetchVideos = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('training_videos')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        setVideos(data || []);
+        
+        toast({
+          description: "Quiz saved successfully",
+        });
+      } catch (error) {
+        console.error('Error refreshing videos:', error);
+      }
+    };
+    
+    fetchVideos();
   };
 
   if (showQuizForm && selectedVideo) {
@@ -62,8 +129,13 @@ export const QuizManagement = () => {
       <div className="space-y-4">
         <QuizForm 
           videoId={selectedVideo} 
+          existingQuestions={existingQuestions}
           onComplete={handleQuizFormComplete} 
-          onCancel={() => setShowQuizForm(false)}
+          onCancel={() => {
+            setShowQuizForm(false);
+            setSelectedVideo(null);
+            setExistingQuestions([]);
+          }}
         />
       </div>
     );
@@ -104,7 +176,7 @@ export const QuizManagement = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Select a video to add a quiz:</p>
+            <p className="text-sm text-muted-foreground">Select a video to add or edit a quiz:</p>
             {videos.map(video => (
               <div key={video.id} className="flex items-center justify-between p-4 border rounded-md">
                 <div>
@@ -119,7 +191,7 @@ export const QuizManagement = () => {
                 <Button 
                   variant={video.has_quiz ? "outline" : "default"}
                   size="sm"
-                  onClick={() => handleAddQuiz(video.id)}
+                  onClick={() => handleAddOrEditQuiz(video.id)}
                 >
                   <FileQuestion className="h-4 w-4 mr-2" />
                   {video.has_quiz ? "Edit Quiz" : "Add Quiz"}

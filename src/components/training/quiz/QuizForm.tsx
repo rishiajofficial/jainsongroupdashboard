@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -12,6 +12,13 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface QuizFormProps {
   videoId: string;
+  existingQuestions?: {
+    question: string;
+    options: {
+      option_text: string;
+      is_correct: boolean;
+    }[];
+  }[];
   onComplete: () => void;
   onCancel: () => void;
 }
@@ -24,13 +31,20 @@ interface QuizQuestion {
   }[];
 }
 
-export function QuizForm({ videoId, onComplete, onCancel }: QuizFormProps) {
+export function QuizForm({ videoId, existingQuestions = [], onComplete, onCancel }: QuizFormProps) {
   const [questions, setQuestions] = useState<QuizQuestion[]>([
     { question: "", options: [{ option_text: "", is_correct: false }] }
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const form = useForm();
+  
+  // Load existing questions if provided
+  useEffect(() => {
+    if (existingQuestions && existingQuestions.length > 0) {
+      setQuestions(existingQuestions);
+    }
+  }, [existingQuestions]);
 
   const handleAddQuestion = () => {
     setQuestions([...questions, { 
@@ -124,6 +138,37 @@ export function QuizForm({ videoId, onComplete, onCancel }: QuizFormProps) {
     try {
       setIsSubmitting(true);
       
+      // If we have existing questions, delete them first
+      if (existingQuestions && existingQuestions.length > 0) {
+        // Get all question IDs for this video
+        const { data: existingQuestionsData, error: questionsError } = await supabase
+          .from('training_quiz_questions')
+          .select('id')
+          .eq('video_id', videoId);
+          
+        if (questionsError) throw questionsError;
+        
+        if (existingQuestionsData && existingQuestionsData.length > 0) {
+          const questionIds = existingQuestionsData.map(q => q.id);
+          
+          // Delete all options for these questions
+          const { error: optionsDeleteError } = await supabase
+            .from('training_quiz_options')
+            .delete()
+            .in('question_id', questionIds);
+            
+          if (optionsDeleteError) throw optionsDeleteError;
+          
+          // Delete all questions
+          const { error: questionsDeleteError } = await supabase
+            .from('training_quiz_questions')
+            .delete()
+            .eq('video_id', videoId);
+            
+          if (questionsDeleteError) throw questionsDeleteError;
+        }
+      }
+      
       // Save questions and options
       for (const question of questions) {
         const { data: questionData, error: questionError } = await supabase
@@ -154,6 +199,14 @@ export function QuizForm({ videoId, onComplete, onCancel }: QuizFormProps) {
         if (optionsError) throw optionsError;
       }
       
+      // Update the has_quiz flag on the video
+      const { error: updateError } = await supabase
+        .from('training_videos')
+        .update({ has_quiz: true })
+        .eq('id', videoId);
+        
+      if (updateError) throw updateError;
+      
       toast({
         description: "Quiz questions saved successfully",
       });
@@ -173,9 +226,11 @@ export function QuizForm({ videoId, onComplete, onCancel }: QuizFormProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create Quiz</CardTitle>
+        <CardTitle>{existingQuestions && existingQuestions.length > 0 ? "Edit Quiz" : "Create Quiz"}</CardTitle>
         <CardDescription>
-          Add questions and options for the training video quiz
+          {existingQuestions && existingQuestions.length > 0 
+            ? "Modify questions and options for the training video quiz" 
+            : "Add questions and options for the training video quiz"}
         </CardDescription>
       </CardHeader>
       <CardContent>
