@@ -13,11 +13,15 @@ export function Quiz({ questions, onComplete, passingScore = 70 }: QuizProps) {
   const [quizComplete, setQuizComplete] = useState(false);
   const [score, setScore] = useState(0);
   const [showResults, setShowResults] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   
   const totalQuestions = questions.length;
   const currentQuestion = questions[currentQuestionIndex];
   
   const handleAnswer = (optionId: string) => {
+    // Don't allow changing answers after submission
+    if (hasSubmitted) return;
+    
     setAnswers({
       ...answers,
       [currentQuestion.id]: optionId
@@ -28,6 +32,7 @@ export function Quiz({ questions, onComplete, passingScore = 70 }: QuizProps) {
     if (currentQuestionIndex < totalQuestions - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
+      setHasSubmitted(true);
       calculateScore();
     }
   };
@@ -99,6 +104,7 @@ export function Quiz({ questions, onComplete, passingScore = 70 }: QuizProps) {
               selectedOptionId={selectedOptionId}
               onAnswerSelect={handleAnswer}
               showResults={false}
+              disabled={hasSubmitted}
             />
           </>
         ) : (
@@ -118,13 +124,13 @@ export function Quiz({ questions, onComplete, passingScore = 70 }: QuizProps) {
             <Button 
               variant="outline" 
               onClick={handlePrevious}
-              disabled={currentQuestionIndex === 0}
+              disabled={currentQuestionIndex === 0 || hasSubmitted}
             >
               Previous
             </Button>
             <Button 
               onClick={handleNext}
-              disabled={!selectedOptionId}
+              disabled={!selectedOptionId || hasSubmitted}
             >
               {currentQuestionIndex < totalQuestions - 1 ? 'Next' : 'Submit'}
             </Button>

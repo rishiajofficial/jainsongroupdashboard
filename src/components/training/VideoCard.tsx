@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { PlayCircle, GraduationCap, Check, Clock } from "lucide-react";
+import { PlayCircle, GraduationCap, Check, Clock, AlertCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { TrainingVideo } from "@/hooks/useTrainingVideos";
+import { useToast } from "@/components/ui/use-toast";
 
 interface VideoCardProps {
   video: TrainingVideo;
@@ -13,12 +14,21 @@ interface VideoCardProps {
 
 export function VideoCard({ video }: VideoCardProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const handleWatchVideo = () => {
     navigate(`/training/video/${video.id}`);
   };
   
   const handleTakeQuiz = () => {
+    if (!isQuizUnlocked && !isQuizCompleted) {
+      toast({
+        title: "Quiz Locked",
+        description: "You need to watch at least 50% of the video to unlock the quiz.",
+        variant: "destructive",
+      });
+      return;
+    }
     navigate(`/training/video/${video.id}?quiz=true`);
   };
   
@@ -32,7 +42,9 @@ export function VideoCard({ video }: VideoCardProps) {
     <Card className="h-full flex flex-col">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle className="line-clamp-2">{video.title}</CardTitle>
+          <CardTitle className="line-clamp-2">
+            {video.order_number ? `${video.order_number}. ` : ''}{video.title}
+          </CardTitle>
           <Badge variant="outline">{video.category || "Uncategorized"}</Badge>
         </div>
         <CardDescription className="line-clamp-2">
@@ -97,7 +109,7 @@ export function VideoCard({ video }: VideoCardProps) {
                 </>
               ) : !isQuizUnlocked ? (
                 <>
-                  <Clock className="h-4 w-4 mr-2" />
+                  <AlertCircle className="h-4 w-4 mr-2" />
                   Watch 50% to Unlock Quiz
                 </>
               ) : (

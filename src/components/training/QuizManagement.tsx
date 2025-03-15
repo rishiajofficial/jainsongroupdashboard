@@ -1,11 +1,19 @@
 
 import { useState, useEffect } from "react";
-import { FileQuestion, Edit, ArrowLeft, Video } from "lucide-react";
+import { FileQuestion, Edit, ArrowLeft, Video, Pencil, FileText } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface QuizManagementProps {
   onEditQuiz: (videoId: string) => void;
@@ -14,7 +22,6 @@ interface QuizManagementProps {
 export const QuizManagement = ({ onEditQuiz }: QuizManagementProps) => {
   const [videos, setVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Fetch videos
@@ -24,11 +31,19 @@ export const QuizManagement = ({ onEditQuiz }: QuizManagementProps) => {
         setLoading(true);
         const { data, error } = await supabase
           .from('training_videos')
-          .select('*')
+          .select('*, training_quiz_questions(count)')
+          .order('order_number', { ascending: true })
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        setVideos(data || []);
+        
+        // Format data to include question count
+        const videosWithQuestionCount = data?.map(video => ({
+          ...video,
+          question_count: video.training_quiz_questions?.[0]?.count || 0
+        })) || [];
+        
+        setVideos(videosWithQuestionCount);
       } catch (error) {
         console.error('Error fetching videos:', error);
         toast({
@@ -51,13 +66,16 @@ export const QuizManagement = ({ onEditQuiz }: QuizManagementProps) => {
     return (
       <Card>
         <CardHeader>
-          <div className="h-7 bg-muted rounded animate-pulse w-1/3"></div>
-          <div className="h-4 bg-muted rounded animate-pulse w-1/2"></div>
+          <CardTitle>Quiz Management</CardTitle>
+          <CardDescription>
+            Create and manage quizzes for training videos
+          </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="h-7 bg-muted rounded animate-pulse w-full mb-4"></div>
           <div className="space-y-2">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-20 bg-muted rounded animate-pulse"></div>
+              <div key={i} className="h-12 bg-muted rounded animate-pulse"></div>
             ))}
           </div>
         </CardContent>
@@ -81,43 +99,65 @@ export const QuizManagement = ({ onEditQuiz }: QuizManagementProps) => {
             <p className="text-sm text-muted-foreground mt-1">Upload training videos first to create quizzes.</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Select a video to add or edit a quiz:</p>
-            <div className="grid gap-4 md:grid-cols-2">
-              {videos.map(video => (
-                <div key={video.id} className="flex flex-col p-4 border rounded-md shadow-sm h-full">
-                  <div className="flex-1">
-                    <h3 className="font-medium text-lg mb-1">{video.title}</h3>
-                    <div className="flex items-center mb-3 space-x-2">
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>No.</TableHead>
+                  <TableHead>Video Title</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Quiz Status</TableHead>
+                  <TableHead>Questions</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {videos.map((video, index) => (
+                  <TableRow key={video.id}>
+                    <TableCell className="font-medium">
+                      {video.order_number || index + 1}
+                    </TableCell>
+                    <TableCell>{video.title}</TableCell>
+                    <TableCell>
                       <Badge variant="outline">{video.category || "Uncategorized"}</Badge>
-                      {video.has_quiz && (
+                    </TableCell>
+                    <TableCell>
+                      {video.has_quiz ? (
                         <Badge variant="secondary" className="flex items-center gap-1">
                           <FileQuestion className="h-3 w-3" />
                           Has Quiz
                         </Badge>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">No Quiz</span>
                       )}
-                    </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                      {video.description || "No description available"}
-                    </p>
-                  </div>
-                  <div className="mt-auto flex justify-end">
-                    <Button 
-                      variant={video.has_quiz ? "outline" : "default"}
-                      size="sm"
-                      className="w-full"
-                      onClick={() => handleAddOrEditQuiz(video.id)}
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      {video.has_quiz ? "Edit Quiz" : "Add Quiz"}
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                    </TableCell>
+                    <TableCell>{video.question_count}</TableCell>
+                    <TableCell className="text-right">
+                      <Button 
+                        variant={video.has_quiz ? "outline" : "default"}
+                        size="sm"
+                        onClick={() => handleAddOrEditQuiz(video.id)}
+                      >
+                        {video.has_quiz ? (
+                          <>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit Quiz
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="h-4 w-4 mr-2" />
+                            Add Quiz
+                          </>
+                        )}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         )}
       </CardContent>
     </Card>
   );
-};
+}

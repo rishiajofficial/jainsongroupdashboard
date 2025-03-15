@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, PlayCircle, PauseCircle, ChevronRight, XCircle, GraduationCap } from "lucide-react";
+import { ArrowLeft, PlayCircle, PauseCircle, ChevronRight, XCircle, GraduationCap, AlertCircle } from "lucide-react";
 import { Quiz } from "@/components/training/Quiz";
 import { Badge } from "@/components/ui/badge";
 
@@ -30,6 +30,7 @@ export default function TrainingVideo() {
   const [lastProgressUpdate, setLastProgressUpdate] = useState(0);
   const [progressUpdateCount, setProgressUpdateCount] = useState(0);
   const [quizUnlocked, setQuizUnlocked] = useState(false);
+  const [videoWatched, setVideoWatched] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -127,11 +128,21 @@ export default function TrainingVideo() {
         setVideoData(video);
         setQuizData(quiz || []);
         
-        // Show quiz if the URL has the quiz parameter, or 
-        // if the user has already watched most of the video 
-        // but hasn't completed the quiz yet
+        // Show quiz if the URL has the quiz parameter
         if (shouldShowQuiz) {
-          setShowQuiz(true);
+          // Check if quiz is unlocked
+          if (progress && progress.watched_percentage >= 50) {
+            setShowQuiz(true);
+            setQuizUnlocked(true);
+          } else {
+            // Redirect back if trying to access quiz directly when not unlocked
+            toast({
+              title: "Quiz Locked",
+              description: "You need to watch at least 50% of the video to unlock the quiz.",
+              variant: "destructive",
+            });
+            navigate(`/training/video/${id}`);
+          }
         } else if (progress && progress.watched_percentage >= 50 && 
             !progress.quiz_completed && quiz && quiz.length > 0) {
           setQuizUnlocked(true);
@@ -163,6 +174,8 @@ export default function TrainingVideo() {
     
     const currentTime = videoRef.current.currentTime;
     const duration = videoRef.current.duration;
+    if (!duration) return;
+    
     const percentage = Math.floor((currentTime / duration) * 100);
     
     try {
@@ -192,6 +205,8 @@ export default function TrainingVideo() {
     
     const currentTime = videoRef.current.currentTime;
     const duration = videoRef.current.duration;
+    if (!duration) return;
+    
     const percentage = Math.floor((currentTime / duration) * 100);
     
     setCurrentTime(currentTime);
@@ -200,11 +215,11 @@ export default function TrainingVideo() {
     // Force a UI update to ensure progress bar moves
     setProgressUpdateCount(prev => prev + 1);
     
-    // Update progress every 5 seconds or when percentage changes significantly
+    // Update progress every 3 seconds or when percentage changes significantly
     const now = Date.now();
     if (
-      Math.abs(percentage - userProgress.watched_percentage) >= 5 || 
-      now - lastProgressUpdate > 5000
+      Math.abs(percentage - (userProgress.watched_percentage || 0)) >= 5 || 
+      now - lastProgressUpdate > 3000
     ) {
       console.log(`Updating progress: ${percentage}%, Time: ${currentTime}/${duration}`);
       setLastProgressUpdate(now);
@@ -235,23 +250,32 @@ export default function TrainingVideo() {
               description: "You can now take the quiz for this training video!",
             });
           }
+          
+          // Mark video as watched if progress is 95% or more
+          if (percentage >= 95 && !videoWatched) {
+            setVideoWatched(true);
+          }
         } else if (error) {
           console.error('Error updating progress:', error);
         }
         
         // Show quiz automatically when video is complete
-        if (percentage >= 98 && !userProgress.quiz_completed && quizData.length > 0) {
+        if (percentage >= 95 && !userProgress.quiz_completed && quizData.length > 0) {
           if (videoRef.current) {
             videoRef.current.pause();
             setIsPlaying(false);
           }
-          setShowQuiz(true);
           
           // Show a toast notification
           toast({
             title: "Video Completed",
             description: "Let's take the quiz now to complete your training!",
           });
+          
+          // Set a short timeout to let the user register the completion first
+          setTimeout(() => {
+            setShowQuiz(true);
+          }, 1000);
         }
       } catch (err) {
         console.error('Error updating progress:', err);
@@ -307,6 +331,15 @@ export default function TrainingVideo() {
   };
   
   const handleTakeQuiz = () => {
+    if (!quizUnlocked) {
+      toast({
+        title: "Quiz Locked",
+        description: "You need to watch at least 50% of the video to unlock the quiz.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setShowQuiz(true);
     if (videoRef.current) {
       videoRef.current.pause();
@@ -463,6 +496,12 @@ export default function TrainingVideo() {
                     <span>{userProgress?.watched_percentage || 0}%</span>
                   </div>
                   <Progress value={userProgress?.watched_percentage || 0} />
+                  {quizData.length > 0 && !quizUnlocked && (
+                    <p className="text-xs text-muted-foreground">
+                      <AlertCircle className="h-3 w-3 inline-block mr-1" />
+                      You need to watch at least 50% of the video to unlock the quiz
+                    </p>
+                  )}
                 </div>
                 
                 <div className="flex space-x-2 mt-4 justify-center">
