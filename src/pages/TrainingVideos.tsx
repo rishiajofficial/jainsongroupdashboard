@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/ui/Header";
@@ -242,7 +241,7 @@ export default function TrainingVideos() {
                         <CardFooter className="border-t pt-4 flex justify-between items-center">
                           <div className="flex gap-2 items-center text-sm">
                             {video.progress?.completed ? (
-                              <Badge variant="success" className="flex items-center gap-1">
+                              <Badge variant="secondary" className="flex items-center gap-1">
                                 <CheckCircle className="h-3 w-3" /> Completed
                               </Badge>
                             ) : (
