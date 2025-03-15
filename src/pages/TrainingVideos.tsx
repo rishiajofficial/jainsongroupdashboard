@@ -4,6 +4,8 @@ import { Header } from "@/components/ui/Header";
 import { SideNav } from "@/components/ui/dashboard/SideNav";
 import { Button } from "@/components/ui/button";
 import { CategoryTabs } from "@/components/training/CategoryTabs";
+import { Progress } from "@/components/ui/progress";
+import { GraduationCap, BookOpen, Trophy } from "lucide-react";
 import { useTrainingVideos } from "@/hooks/useTrainingVideos";
 
 const CATEGORIES = [
@@ -25,7 +27,8 @@ export default function TrainingVideos() {
     isLoading, 
     selectedCategory, 
     setSelectedCategory, 
-    filteredVideos 
+    filteredVideos,
+    trainingStats 
   } = useTrainingVideos();
 
   return (
@@ -42,6 +45,40 @@ export default function TrainingVideos() {
                   Manage Training
                 </Button>
               )}
+            </div>
+            
+            {/* Training Progress Stats */}
+            <div className="bg-card rounded-lg border p-4 mb-6">
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-lg font-semibold flex items-center">
+                  <GraduationCap className="mr-2 h-5 w-5" />
+                  Your Training Progress
+                </h2>
+                <div className="text-sm text-muted-foreground">
+                  {trainingStats.completedVideos} of {trainingStats.totalVideos} completed
+                </div>
+              </div>
+              
+              <div className="space-y-1">
+                <Progress 
+                  value={trainingStats.overallProgress} 
+                  className="h-2"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{trainingStats.overallProgress}% complete</span>
+                  
+                  <div className="flex gap-4">
+                    <span className="flex items-center">
+                      <BookOpen className="h-3 w-3 mr-1" />
+                      {trainingStats.totalVideos} Videos
+                    </span>
+                    <span className="flex items-center">
+                      <Trophy className="h-3 w-3 mr-1" />
+                      {trainingStats.completedVideos} Completed
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
             
             <CategoryTabs 

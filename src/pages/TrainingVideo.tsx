@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Header } from "@/components/ui/Header";
@@ -36,12 +35,15 @@ export default function TrainingVideo() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  console.log("Initial state - quizUnlocked:", quizUnlocked, "watchedPercentage:", watchedPercentage);
+
   useEffect(() => {
     async function fetchData() {
       if (!id) return;
       
       try {
         setIsLoading(true);
+        console.log("Fetching data for video:", id);
         
         // Get user session
         const { data: sessionData } = await supabase.auth.getSession();
@@ -73,6 +75,7 @@ export default function TrainingVideo() {
           .single();
           
         if (videoError) throw videoError;
+        console.log("Video data:", video);
         
         // Fetch user progress
         const { data: progress, error: progressError } = await supabase
@@ -82,7 +85,18 @@ export default function TrainingVideo() {
           .eq('video_id', id)
           .single();
           
-        if (!progressError && !progress) {
+        if (!progressError && progress) {
+          console.log("Existing progress found:", progress);
+          setUserProgress(progress);
+          setWatchedPercentage(progress.watched_percentage || 0);
+          
+          // Check if quiz should be unlocked (50% threshold)
+          if (progress.watched_percentage >= 50) {
+            console.log("Quiz unlocked based on existing progress");
+            setQuizUnlocked(true);
+          }
+        } else {
+          console.log("No existing progress, creating new entry");
           // Create progress entry if it doesn't exist
           const { data: newProgress, error: createError } = await supabase
             .from('training_progress')
@@ -99,16 +113,9 @@ export default function TrainingVideo() {
             .single();
             
           if (createError) throw createError;
+          console.log("New progress created:", newProgress);
           setUserProgress(newProgress);
           setWatchedPercentage(0);
-        } else {
-          setUserProgress(progress);
-          setWatchedPercentage(progress?.watched_percentage || 0);
-          
-          // Check if quiz should be unlocked
-          if (progress && progress.watched_percentage >= 50) {
-            setQuizUnlocked(true);
-          }
         }
         
         // Fetch quiz questions
@@ -135,7 +142,8 @@ export default function TrainingVideo() {
         // Show quiz if the URL has the quiz parameter
         if (shouldShowQuiz) {
           // Check if quiz is unlocked
-          if (progress && progress.watched_percentage >= 50) {
+          if ((progress && progress.watched_percentage >= 50) || progress?.quiz_completed) {
+            console.log("Setting showQuiz to true based on URL param and progress");
             setShowQuiz(true);
             setQuizUnlocked(true);
           } else {
@@ -147,8 +155,10 @@ export default function TrainingVideo() {
             });
             navigate(`/training/video/${id}`);
           }
-        } else if (progress && progress.watched_percentage >= 50 && 
-            !progress.quiz_completed && quiz && quiz.length > 0) {
+        } else if ((progress && progress.watched_percentage >= 50 && 
+            !progress.quiz_completed && quiz && quiz.length > 0) || 
+            (progress?.quiz_completed)) {
+          console.log("Setting quizUnlocked to true based on progress");
           setQuizUnlocked(true);
           if (queryParams.get('autoShowQuiz') === 'true') {
             setShowQuiz(true);
@@ -246,7 +256,7 @@ export default function TrainingVideo() {
           
         if (!error && data) {
           setUserProgress(data);
-          setWatchedPercentage(data.watched_percentage);
+          setWatchedPercentage(percentage);  // Use the calculated percentage directly
           
           // Check if quiz should be unlocked (at 50% progress)
           if (percentage >= 50 && !quizUnlocked) {
@@ -341,6 +351,7 @@ export default function TrainingVideo() {
   };
   
   const handleTakeQuiz = () => {
+    console.log("Take Quiz clicked. quizUnlocked:", quizUnlocked, "watchedPercentage:", watchedPercentage);
     if (!quizUnlocked) {
       toast({
         title: "Quiz Locked",
@@ -418,6 +429,8 @@ export default function TrainingVideo() {
       });
     }
   };
+
+  console.log("Rendering with quizUnlocked:", quizUnlocked, "watchedPercentage:", watchedPercentage, "showQuiz:", showQuiz);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -505,7 +518,11 @@ export default function TrainingVideo() {
                     <span>Progress</span>
                     <span>{watchedPercentage}%</span>
                   </div>
-                  <Progress value={watchedPercentage} />
+                  <Progress 
+                    value={watchedPercentage} 
+                    key={`progress-${progressUpdateCount}`} 
+                    className="transition-all duration-200"
+                  />
                   {quizData.length > 0 && !quizUnlocked && (
                     <p className="text-xs text-muted-foreground">
                       <AlertCircle className="h-3 w-3 inline-block mr-1" />
@@ -515,7 +532,7 @@ export default function TrainingVideo() {
                 </div>
                 
                 <div className="flex space-x-2 mt-4 justify-center">
-                  {quizData.length > 0 && quizUnlocked && !userProgress?.quiz_completed && (
+                  {quizData.length > 0 && (quizUnlocked && !userProgress?.quiz_completed) && (
                     <Button onClick={handleTakeQuiz} className="gap-2">
                       <GraduationCap className="h-4 w-4" /> Start Quiz
                     </Button>
@@ -543,7 +560,7 @@ export default function TrainingVideo() {
                         )}
                       </CardDescription>
                     </div>
-                    {quizData.length > 0 && quizUnlocked && !userProgress?.quiz_completed && (
+                    {quizData.length > 0 && (quizUnlocked && !userProgress?.quiz_completed) && (
                       <Button onClick={handleTakeQuiz} size="sm" className="gap-2">
                         <GraduationCap className="h-4 w-4" /> Go to Quiz
                       </Button>
@@ -554,7 +571,7 @@ export default function TrainingVideo() {
                       <p>{videoData?.description}</p>
                     </div>
                   </CardContent>
-                  {quizData.length > 0 && quizUnlocked && !userProgress?.quiz_completed && (
+                  {quizData.length > 0 && (quizUnlocked && !userProgress?.quiz_completed) && (
                     <CardFooter>
                       <Button onClick={handleTakeQuiz} className="w-full">
                         Take Quiz Now

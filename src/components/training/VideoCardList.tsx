@@ -44,6 +44,7 @@ export const VideoCardList = ({ videos, loading, onRefresh, onEditQuiz }: VideoC
   const [editDescription, setEditDescription] = useState("");
   const [editCategory, setEditCategory] = useState("");
   const [editOrderNumber, setEditOrderNumber] = useState<number | undefined>(undefined);
+  const [editQuizNumber, setEditQuizNumber] = useState<number | undefined>(undefined);
 
   const handleDeleteVideo = async (id: string) => {
     if (!confirm("Are you sure you want to delete this video? This action cannot be undone.")) {
@@ -144,6 +145,7 @@ export const VideoCardList = ({ videos, loading, onRefresh, onEditQuiz }: VideoC
     setEditDescription(video.description || "");
     setEditCategory(video.category || "General");
     setEditOrderNumber(video.order_number);
+    setEditQuizNumber(video.quiz_number);
     setIsEditing(true);
   };
 
@@ -157,7 +159,8 @@ export const VideoCardList = ({ videos, loading, onRefresh, onEditQuiz }: VideoC
           title: editTitle,
           description: editDescription,
           category: editCategory,
-          order_number: editOrderNumber
+          order_number: editOrderNumber,
+          quiz_number: editQuizNumber
         })
         .eq('id', selectedVideo.id);
         
@@ -229,7 +232,7 @@ export const VideoCardList = ({ videos, loading, onRefresh, onEditQuiz }: VideoC
                   {video.has_quiz ? (
                     <Badge variant="secondary" className="flex items-center gap-1">
                       <FileQuestion className="h-3 w-3" />
-                      Has Quiz
+                      Has Quiz {video.quiz_number ? `(#${video.quiz_number})` : ''}
                     </Badge>
                   ) : (
                     <span className="text-muted-foreground text-sm">No Quiz</span>
@@ -333,6 +336,24 @@ export const VideoCardList = ({ videos, loading, onRefresh, onEditQuiz }: VideoC
                 />
               </div>
             </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="quizNumber">Quiz Number (optional)</Label>
+              <Input
+                id="quizNumber"
+                type="number"
+                value={editQuizNumber !== undefined ? editQuizNumber : ''}
+                onChange={(e) => {
+                  const value = e.target.value !== '' ? parseInt(e.target.value) : undefined;
+                  setEditQuizNumber(value);
+                }}
+                placeholder="Enter quiz number"
+              />
+              <p className="text-xs text-muted-foreground">
+                This number helps organize quizzes in a sequence
+              </p>
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
@@ -356,7 +377,6 @@ export const VideoCardList = ({ videos, loading, onRefresh, onEditQuiz }: VideoC
   );
 };
 
-// Helper component for labeling fields
 function Label({ htmlFor, children }: { htmlFor: string, children: React.ReactNode }) {
   return (
     <label htmlFor={htmlFor} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">

@@ -15,6 +15,7 @@ export interface TrainingVideo {
   created_by: string;
   category: string;
   order_number?: number;
+  quiz_number?: number;
   progress?: {
     watched_percentage: number;
     completed: boolean;
@@ -23,11 +24,22 @@ export interface TrainingVideo {
   };
 }
 
+export interface TrainingStats {
+  totalVideos: number;
+  completedVideos: number;
+  overallProgress: number;
+}
+
 export const useTrainingVideos = () => {
   const [role, setRole] = useState('salesperson');
   const [videos, setVideos] = useState<TrainingVideo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [trainingStats, setTrainingStats] = useState<TrainingStats>({
+    totalVideos: 0,
+    completedVideos: 0,
+    overallProgress: 0
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -93,6 +105,26 @@ export const useTrainingVideos = () => {
         };
       });
       
+      // Calculate training stats
+      if (videosWithProgress) {
+        const totalVideos = videosWithProgress.length;
+        const completedVideos = videosWithProgress.filter(v => v.progress?.completed).length;
+        
+        // Calculate overall progress as an average of progress percentages
+        let totalProgress = 0;
+        videosWithProgress.forEach(video => {
+          totalProgress += video.progress?.watched_percentage || 0;
+        });
+        
+        const overallProgress = totalVideos > 0 ? Math.round(totalProgress / totalVideos) : 0;
+        
+        setTrainingStats({
+          totalVideos,
+          completedVideos,
+          overallProgress
+        });
+      }
+      
       setVideos(videosWithProgress || []);
     } catch (error) {
       console.error('Error fetching training videos:', error);
@@ -119,6 +151,8 @@ export const useTrainingVideos = () => {
     isLoading,
     selectedCategory,
     setSelectedCategory,
-    filteredVideos
+    filteredVideos,
+    trainingStats,
+    refreshVideos: fetchData
   };
 };

@@ -44,6 +44,11 @@ const getRoleBadgeVariant = (role: UserRole) => {
 export function UserMenu({ user, onLogout }: UserMenuProps) {
   const navigate = useNavigate();
   
+  const handleProfileClick = () => {
+    console.log("Profile button clicked, navigating to /user-profile");
+    navigate("/user-profile");
+  };
+  
   return (
     <div className="flex items-center gap-4">
       <TooltipProvider>
@@ -72,7 +77,7 @@ export function UserMenu({ user, onLogout }: UserMenuProps) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/user-profile")}>
+                <DropdownMenuItem onClick={handleProfileClick}>
                   <User className="h-4 w-4 mr-2" />
                   Profile
                 </DropdownMenuItem>
