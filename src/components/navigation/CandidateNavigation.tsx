@@ -1,6 +1,6 @@
 
 import { Link } from "react-router-dom";
-import { Briefcase, FileText, Map, ClipboardCheck } from "lucide-react";
+import { Briefcase, FileText, Map, ClipboardCheck, GraduationCap } from "lucide-react";
 import { usePageAccess } from "@/contexts/PageAccessContext";
 import { useEffect } from "react";
 
@@ -58,6 +58,12 @@ export function CandidateNavigation({ variant, onClose = () => {} }: CandidateNa
       label: "Track Visits",
       icon: <Map className="h-4 w-4 inline mr-2" />,
       isVisible: isPageVisible("/salesperson-tracker", "candidate")
+    },
+    {
+      path: "/training",
+      label: "Training Videos",
+      icon: <GraduationCap className="h-4 w-4 inline mr-2" />,
+      isVisible: isPageVisible("/training", "candidate")
     }
   ];
 

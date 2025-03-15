@@ -26,7 +26,7 @@ export const CONFIGURABLE_PAGES: PageConfig[] = [
   { path: "/applications", name: "My Applications", description: "View submitted applications", defaultRoles: ['candidate'] },
   { path: "/assessments/candidate", name: "My Assessments", description: "Take assigned assessments", defaultRoles: ['candidate'] },
   { path: "/salesperson-tracker", name: "Track Visits", description: "Record shop visits", defaultRoles: ['candidate', 'salesperson'] },
-  { path: "/training", name: "Training Videos", description: "Access training materials", defaultRoles: ['salesperson', 'manager', 'admin'] },
+  { path: "/training", name: "Training Videos", description: "Access training materials", defaultRoles: ['candidate', 'salesperson', 'manager', 'admin'] },
   
   // Salesperson Pages
   { path: "/salesperson-stats", name: "Salesperson Stats", description: "View sales performance metrics", defaultRoles: ['salesperson', 'manager'] },
