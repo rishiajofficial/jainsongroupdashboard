@@ -737,6 +737,7 @@ export type Database = {
       }
       training_videos: {
         Row: {
+          category: string | null
           created_at: string
           created_by: string
           description: string | null
@@ -747,6 +748,7 @@ export type Database = {
           video_url: string
         }
         Insert: {
+          category?: string | null
           created_at?: string
           created_by: string
           description?: string | null
@@ -757,6 +759,7 @@ export type Database = {
           video_url: string
         }
         Update: {
+          category?: string | null
           created_at?: string
           created_by?: string
           description?: string | null

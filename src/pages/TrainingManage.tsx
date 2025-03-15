@@ -66,12 +66,12 @@ export default function TrainingManage() {
   const handleDeleteVideo = async (id: string) => {
     try {
       // First, delete associated quiz questions and options
+      // Delete quiz options associated with the questions of this video
       const { error: quizOptionsError } = await supabase
         .from('training_quiz_options')
         .delete()
-        .in('question_id', function(builder) {
-          builder
-            .select('id')
+        .eq('question_id', function(builder) {
+          builder.select('id')
             .from('training_quiz_questions')
             .eq('video_id', id);
         });
