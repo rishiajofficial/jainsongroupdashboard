@@ -18,18 +18,25 @@ export const CategoryTabs = ({
   isLoading 
 }: CategoryTabsProps) => {
   return (
-    <Tabs defaultValue="All" value={selectedCategory} onValueChange={setSelectedCategory}>
-      <TabsList className="mb-4 flex flex-wrap gap-2">
-        {categories.map(category => (
-          <TabsTrigger key={category} value={category}>
-            {category}
-          </TabsTrigger>
-        ))}
-      </TabsList>
+    <div className="space-y-6">
+      <div className="overflow-x-auto pb-2">
+        <TabsList className="mb-4 inline-flex flex-nowrap min-w-full">
+          {categories.map(category => (
+            <TabsTrigger 
+              key={category} 
+              value={category}
+              onClick={() => setSelectedCategory(category)}
+              className={selectedCategory === category ? "bg-primary text-primary-foreground" : ""}
+            >
+              {category}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </div>
       
-      <TabsContent value={selectedCategory}>
+      <div className="pt-2">
         <VideoGrid videos={filteredVideos} isLoading={isLoading} />
-      </TabsContent>
-    </Tabs>
+      </div>
+    </div>
   );
-};
+}

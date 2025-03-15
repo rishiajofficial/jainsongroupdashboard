@@ -25,11 +25,11 @@ export default function TrainingManage() {
       <Header />
       <div className="flex-1 flex">
         <SideNav role={role as any} />
-        <main className="flex-1 p-6">
-          <div className="max-w-7xl mx-auto space-y-6">
+        <main className="flex-1 p-6 overflow-auto">
+          <div className="max-w-5xl mx-auto space-y-6">
             <div className="flex justify-between items-center">
               <h1 className="text-3xl font-bold tracking-tight">Manage Training</h1>
-              {!showAddForm && (
+              {!showAddForm && activeTab === "videos" && (
                 <Button onClick={() => setShowAddForm(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add New Video
@@ -48,7 +48,7 @@ export default function TrainingManage() {
               </div>
             ) : (
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList>
+                <TabsList className="mb-4">
                   <TabsTrigger value="videos">Training Videos</TabsTrigger>
                   <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
                 </TabsList>
