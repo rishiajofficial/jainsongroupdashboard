@@ -38,7 +38,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, UserCog, UserPlus, Trash2, PenSquare } from "lucide-react";
+import { AlertCircle, UserCog, UserPlus, Trash2, PenSquare, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { UserRole } from "@/pages/DashboardPage";
 
@@ -129,17 +129,16 @@ const AdminUsers = () => {
 
   const createUser = async () => {
     try {
-      // Sign up the user with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // Create the user with Supabase Admin API instead of signUp to avoid logging in
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: newUser.email,
         password: newUser.password,
-        options: {
-          data: {
-            full_name: newUser.full_name,
-            role: newUser.role,
-            company: newUser.company || null,
-            position: newUser.position || null
-          }
+        email_confirm: true, // Automatically confirm the email
+        user_metadata: {
+          full_name: newUser.full_name,
+          role: newUser.role,
+          company: newUser.company || null,
+          position: newUser.position || null
         }
       });
 
@@ -148,14 +147,15 @@ const AdminUsers = () => {
       }
 
       // Update the profiles table if needed (should happen automatically via trigger)
-      if (newUser.company || newUser.position) {
+      if (authData.user && (newUser.company || newUser.position)) {
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
             company: newUser.company,
-            position: newUser.position
+            position: newUser.position,
+            role: newUser.role
           })
-          .eq('id', authData.user?.id);
+          .eq('id', authData.user.id);
 
         if (profileError) {
           console.error('Error updating profile:', profileError);
@@ -233,6 +233,22 @@ const AdminUsers = () => {
     } catch (error: any) {
       console.error('Error deleting user:', error);
       toast.error(error.message || 'Failed to delete user. Note: Only superadmins can delete users.');
+    }
+  };
+
+  const sendLoginDetails = async (user: UserData) => {
+    try {
+      // This would typically call a server function to send an email
+      // For now, we'll just show a success toast
+      toast.success(`Login details would be emailed to ${user.email}`);
+      
+      // In a real implementation, you'd call a server function here:
+      // const { error } = await supabase.functions.invoke('send-login-email', {
+      //   body: { userId: user.id }
+      // });
+    } catch (error: any) {
+      console.error('Error sending login details:', error);
+      toast.error(error.message || 'Failed to send login details');
     }
   };
 
@@ -450,6 +466,15 @@ const AdminUsers = () => {
                                   onClick={() => handleEditUser(user)}
                                 >
                                   <PenSquare className="h-4 w-4" />
+                                </Button>
+                                
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => sendLoginDetails(user)}
+                                  title="Send login details"
+                                >
+                                  <Mail className="h-4 w-4 text-blue-500" />
                                 </Button>
                                 
                                 <Button 

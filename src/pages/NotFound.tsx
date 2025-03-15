@@ -1,12 +1,13 @@
 
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { Header } from "@/components/ui/Header";
 import { Button } from "@/components/ui/button";
-import { HomeIcon } from "lucide-react";
+import { HomeIcon, RefreshCcw } from "lucide-react";
 
 const NotFound = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     console.error(
@@ -25,12 +26,18 @@ const NotFound = () => {
           <p className="text-muted-foreground max-w-md mx-auto">
             The page you're looking for doesn't exist or has been moved.
           </p>
-          <Button asChild className="mt-4">
-            <Link to="/">
-              <HomeIcon className="mr-2 h-4 w-4" />
-              Return Home
-            </Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+            <Button asChild className="mt-4">
+              <Link to="/">
+                <HomeIcon className="mr-2 h-4 w-4" />
+                Return Home
+              </Link>
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/dashboard")} className="mt-4">
+              <RefreshCcw className="mr-2 h-4 w-4" />
+              Go to Dashboard
+            </Button>
+          </div>
         </div>
       </main>
     </div>

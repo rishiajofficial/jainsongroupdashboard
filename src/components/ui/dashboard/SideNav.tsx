@@ -23,31 +23,30 @@ const navigationItems = {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/jobs", label: "Browse Jobs", icon: Briefcase },
     { href: "/applications", label: "My Applications", icon: FileText },
-    { href: "/assessments/candidate", label: "My Assessments", icon: ClipboardCheck },
-    { href: "/salesperson-tracker", label: "Track Visits", icon: Map },
+    { href: "/assessments", label: "My Assessments", icon: ClipboardCheck },
+    { href: "/profile", label: "My Profile", icon: Users },
   ],
   salesperson: [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/salesperson-tracker", label: "Record a Visit", icon: Map },
-    { href: "/salesperson-stats", label: "My Stats", icon: BarChart4 },
+    { href: "/salesperson/tracker", label: "Record a Visit", icon: Map },
     { href: "/training", label: "Training Videos", icon: GraduationCap },
+    { href: "/profile", label: "My Profile", icon: Users },
   ],
   manager: [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/applications/review", label: "Review Candidates", icon: UserCheck },
     { href: "/jobs/manage", label: "Manage Jobs", icon: Briefcase },
-    { href: "/salesperson-dashboard", label: "Review Salespersons", icon: Users },
-    { href: "/manager-stats", label: "Statistics", icon: BarChart4 },
     { href: "/training/manage", label: "Manage Training", icon: GraduationCap },
     { href: "/training/performance", label: "Training Performance", icon: ClipboardCheck },
+    { href: "/profile", label: "My Profile", icon: Users },
   ],
   admin: [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/admin/approvals", label: "Manager Approvals", icon: UserCheck },
     { href: "/admin/users", label: "User Management", icon: Users },
+    { href: "/admin/approvals", label: "Manager Approvals", icon: UserCheck },
     { href: "/admin/page-access", label: "Page Access", icon: FileText },
     { href: "/admin/dashboard-settings", label: "Dashboard Settings", icon: Settings2 },
-    { href: "/admin/stats", label: "Platform Stats", icon: BarChart4 },
+    { href: "/profile", label: "My Profile", icon: Users },
   ]
 };
 
