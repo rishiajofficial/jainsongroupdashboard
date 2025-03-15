@@ -8,14 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { GraduationCap, CheckCircle, Video, Play, Clock } from "lucide-react";
+import { GraduationCap, CheckCircle, Video, Play, Clock, Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function TrainingVideos() {
   const [role, setRole] = useState('salesperson');
   const [isLoading, setIsLoading] = useState(true);
   const [trainingVideos, setTrainingVideos] = useState<any[]>([]);
   const [userProgress, setUserProgress] = useState<Record<string, any>>({});
+  const [categories, setCategories] = useState<string[]>([]);
+  const [activeCategory, setActiveCategory] = useState("all");
   const { toast } = useToast();
   const navigate = useNavigate();
   const videoRefs = useRef<Record<string, HTMLVideoElement>>({});
@@ -77,8 +80,14 @@ export default function TrainingVideos() {
           });
         }
         
+        // Extract unique categories
+        const uniqueCategories = Array.from(
+          new Set(videos?.map(video => video.category || 'Uncategorized'))
+        );
+        
         setTrainingVideos(videos || []);
         setUserProgress(progressMap);
+        setCategories(uniqueCategories as string[]);
       } catch (error) {
         console.error('Error fetching training data:', error);
         toast({
@@ -122,7 +131,7 @@ export default function TrainingVideos() {
   const getProgressPercentage = (videoId: string) => {
     const progress = userProgress[videoId];
     if (!progress) return 0;
-    return progress.quiz_completed ? 100 : (progress.watched_percentage || 0);
+    return progress.watched_percentage || 0;
   };
 
   const handleVideoLoad = (videoId: string) => {
@@ -140,11 +149,18 @@ export default function TrainingVideos() {
       // When time updates, capture the frame
       videoRef.addEventListener('timeupdate', function onTimeUpdate() {
         if (ctx) {
-          ctx.drawImage(videoRef, 0, 0, canvas.width, canvas.height);
-          const thumbnailUrl = canvas.toDataURL('image/jpeg');
-          
-          // Update the video element's poster
-          videoRef.poster = thumbnailUrl;
+          try {
+            ctx.drawImage(videoRef, 0, 0, canvas.width, canvas.height);
+            const thumbnailUrl = canvas.toDataURL('image/jpeg');
+            
+            // Update the video element's poster
+            videoRef.poster = thumbnailUrl;
+            
+            // Store thumbnail in local storage to avoid CORS issues
+            localStorage.setItem(`thumbnail_${videoId}`, thumbnailUrl);
+          } catch (e) {
+            console.error('Error generating thumbnail:', e);
+          }
           
           // Remove listener after first capture
           videoRef.removeEventListener('timeupdate', onTimeUpdate);
@@ -183,6 +199,10 @@ export default function TrainingVideos() {
     );
   };
 
+  const filteredVideos = activeCategory === "all" 
+    ? trainingVideos 
+    : trainingVideos.filter(video => (video.category || "Uncategorized") === activeCategory);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -212,100 +232,196 @@ export default function TrainingVideos() {
                   </Card>
                 ))}
               </div>
-            ) : trainingVideos.length === 0 ? (
-              <Card className="p-8 text-center">
-                <CardHeader>
-                  <CardTitle className="flex justify-center">
-                    <GraduationCap className="h-10 w-10 mb-2" />
-                  </CardTitle>
-                  <CardTitle>No Training Videos Available</CardTitle>
-                  <CardDescription>
-                    Check back later for new training content
-                  </CardDescription>
-                </CardHeader>
-              </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {trainingVideos.map(video => (
-                  <Card key={video.id} className="overflow-hidden">
-                    <div className="relative h-40 bg-muted flex items-center justify-center">
-                      {video.thumbnail_url ? (
-                        <img 
-                          src={video.thumbnail_url} 
-                          alt={video.title} 
-                          className="w-full h-full object-cover"
-                        />
-                      ) : video.video_url ? (
-                        <>
-                          <video 
-                            ref={el => {
-                              if (el) videoRefs.current[video.id] = el;
-                            }}
-                            src={video.video_url}
-                            className="w-full h-full object-cover hidden"
-                            onLoadedData={() => handleVideoLoad(video.id)}
-                            muted
-                            preload="metadata"
-                            controls={false}
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                            <Video className="h-12 w-12 text-white/70" />
-                          </div>
-                        </>
-                      ) : (
-                        <Video className="h-12 w-12 text-muted-foreground" />
-                      )}
-                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                        <Button 
-                          variant="secondary"
-                          size="sm"
-                          className="rounded-full" 
-                          onClick={() => navigate(`/training/video/${video.id}`)}
-                        >
-                          <Play className="h-4 w-4 mr-1" /> Watch Now
-                        </Button>
-                      </div>
+              <>
+                <div className="mb-6">
+                  <Tabs defaultValue="all" value={activeCategory} onValueChange={setActiveCategory}>
+                    <div className="flex items-center justify-between">
+                      <TabsList className="mb-2">
+                        <TabsTrigger value="all">All Categories</TabsTrigger>
+                        {categories.map(category => (
+                          <TabsTrigger key={category} value={category}>
+                            {category}
+                          </TabsTrigger>
+                        ))}
+                      </TabsList>
                     </div>
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg">{video.title}</CardTitle>
-                        {getProgressBadge(video.id)}
-                      </div>
-                      <CardDescription>
-                        {video.description?.substring(0, 100)}{video.description?.length > 100 ? '...' : ''}
-                        {video.has_quiz && (
-                          <div className="mt-1 text-xs inline-flex items-center text-primary">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Includes quiz assessment
+                    
+                    <TabsContent value="all" className="mt-0">
+                      {trainingVideos.length === 0 ? (
+                        <Card className="p-8 text-center">
+                          <CardHeader>
+                            <CardTitle className="flex justify-center">
+                              <GraduationCap className="h-10 w-10 mb-2" />
+                            </CardTitle>
+                            <CardTitle>No Training Videos Available</CardTitle>
+                            <CardDescription>
+                              Check back later for new training content
+                            </CardDescription>
+                          </CardHeader>
+                        </Card>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {trainingVideos.map(video => (
+                            <VideoCard
+                              key={video.id}
+                              video={video}
+                              progress={userProgress[video.id]}
+                              navigate={navigate}
+                              getProgressBadge={getProgressBadge}
+                              getProgressPercentage={getProgressPercentage}
+                              getQuizStatus={getQuizStatus}
+                              handleVideoLoad={handleVideoLoad}
+                              videoRefs={videoRefs}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </TabsContent>
+                    
+                    {categories.map(category => (
+                      <TabsContent key={category} value={category} className="mt-0">
+                        {filteredVideos.length === 0 ? (
+                          <Card className="p-8 text-center">
+                            <CardHeader>
+                              <CardTitle className="flex justify-center">
+                                <GraduationCap className="h-10 w-10 mb-2" />
+                              </CardTitle>
+                              <CardTitle>No Videos in this Category</CardTitle>
+                              <CardDescription>
+                                Check other categories or come back later
+                              </CardDescription>
+                            </CardHeader>
+                          </Card>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredVideos.map(video => (
+                              <VideoCard
+                                key={video.id}
+                                video={video}
+                                progress={userProgress[video.id]}
+                                navigate={navigate}
+                                getProgressBadge={getProgressBadge}
+                                getProgressPercentage={getProgressPercentage}
+                                getQuizStatus={getQuizStatus}
+                                handleVideoLoad={handleVideoLoad}
+                                videoRefs={videoRefs}
+                              />
+                            ))}
                           </div>
                         )}
-                        {getQuizStatus(video)}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Progress</span>
-                          <span>{getProgressPercentage(video.id)}%</span>
-                        </div>
-                        <Progress value={getProgressPercentage(video.id)} />
-                      </div>
-                    </CardContent>
-                    <CardFooter>
-                      <Button 
-                        className="w-full" 
-                        onClick={() => navigate(`/training/video/${video.id}`)}
-                      >
-                        {getProgressPercentage(video.id) > 0 ? 'Continue Training' : 'Start Training'}
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
+                      </TabsContent>
+                    ))}
+                  </Tabs>
+                </div>
+              </>
             )}
           </div>
         </main>
       </div>
     </div>
+  );
+}
+
+// Extracted video card component for cleaner code
+function VideoCard({ 
+  video, 
+  progress, 
+  navigate, 
+  getProgressBadge, 
+  getProgressPercentage, 
+  getQuizStatus,
+  handleVideoLoad,
+  videoRefs
+}: any) {
+  const storedThumbnail = localStorage.getItem(`thumbnail_${video.id}`);
+  
+  return (
+    <Card key={video.id} className="overflow-hidden">
+      <div className="relative h-40 bg-muted flex items-center justify-center">
+        {video.thumbnail_url ? (
+          <img 
+            src={video.thumbnail_url} 
+            alt={video.title} 
+            className="w-full h-full object-cover"
+          />
+        ) : storedThumbnail ? (
+          <img 
+            src={storedThumbnail} 
+            alt={video.title} 
+            className="w-full h-full object-cover"
+          />
+        ) : video.video_url ? (
+          <>
+            <video 
+              ref={el => {
+                if (el) videoRefs.current[video.id] = el;
+              }}
+              src={video.video_url}
+              className="w-full h-full object-cover opacity-0 absolute"
+              onLoadedData={() => handleVideoLoad(video.id)}
+              muted
+              preload="metadata"
+              controls={false}
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+              <Video className="h-12 w-12 text-white/70" />
+            </div>
+          </>
+        ) : (
+          <Video className="h-12 w-12 text-muted-foreground" />
+        )}
+        <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+          <Button 
+            variant="secondary"
+            size="sm"
+            className="rounded-full" 
+            onClick={() => navigate(`/training/video/${video.id}`)}
+          >
+            <Play className="h-4 w-4 mr-1" /> Watch Now
+          </Button>
+        </div>
+      </div>
+      <CardHeader>
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-lg">{video.title}</CardTitle>
+            {video.category && (
+              <Badge variant="outline" className="mt-1">
+                {video.category}
+              </Badge>
+            )}
+          </div>
+          {getProgressBadge(video.id)}
+        </div>
+        <CardDescription>
+          {video.description?.substring(0, 100)}{video.description?.length > 100 ? '...' : ''}
+          {video.has_quiz && (
+            <div className="mt-1 text-xs inline-flex items-center text-primary">
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Includes quiz assessment
+            </div>
+          )}
+          {getQuizStatus(video)}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span>Progress</span>
+            <span>{getProgressPercentage(video.id)}%</span>
+          </div>
+          <Progress value={getProgressPercentage(video.id)} />
+        </div>
+      </CardContent>
+      <CardFooter>
+        <Button 
+          className="w-full" 
+          onClick={() => navigate(`/training/video/${video.id}`)}
+        >
+          {getProgressPercentage(video.id) > 0 ? 'Continue Training' : 'Start Training'}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }

@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, PlayCircle, PauseCircle } from "lucide-react";
 import { Quiz } from "@/components/training/Quiz";
+import { Badge } from "@/components/ui/badge";
 
 export default function TrainingVideo() {
   const { id } = useParams<{ id: string }>();
@@ -22,6 +23,7 @@ export default function TrainingVideo() {
   const [duration, setDuration] = useState(0);
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizData, setQuizData] = useState<any[]>([]);
+  const [lastProgressUpdate, setLastProgressUpdate] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -111,8 +113,16 @@ export default function TrainingVideo() {
           
         if (quizError) throw quizError;
         
+        console.log("Quiz data:", quiz);
         setVideoData(video);
         setQuizData(quiz || []);
+        
+        // Show quiz if the user has already watched most of the video 
+        // but hasn't completed the quiz yet
+        if (progress && progress.watched_percentage >= 90 && 
+            !progress.quiz_completed && quiz && quiz.length > 0) {
+          setShowQuiz(true);
+        }
       } catch (error) {
         console.error('Error fetching training video:', error);
         toast({
@@ -138,10 +148,14 @@ export default function TrainingVideo() {
     setDuration(duration);
     
     // Update progress every 5 seconds or when percentage changes significantly
+    const now = Date.now();
     if (
       Math.abs(percentage - userProgress.watched_percentage) >= 5 || 
-      Date.now() - (userProgress.last_updated_at || 0) > 5000
+      now - lastProgressUpdate > 5000
     ) {
+      console.log(`Updating progress: ${percentage}%`);
+      setLastProgressUpdate(now);
+      
       const { data, error } = await supabase
         .from('training_progress')
         .update({
@@ -155,10 +169,12 @@ export default function TrainingVideo() {
         
       if (!error && data) {
         setUserProgress(data);
+      } else if (error) {
+        console.error('Error updating progress:', error);
       }
       
       // Show quiz when video is complete
-      if (percentage >= 95 && !userProgress.quiz_completed) {
+      if (percentage >= 90 && !userProgress.quiz_completed && quizData.length > 0) {
         setShowQuiz(true);
         if (videoRef.current) {
           videoRef.current.pause();
@@ -234,18 +250,23 @@ export default function TrainingVideo() {
         <SideNav role={role as any} />
         <main className="flex-1 p-6">
           <div className="max-w-5xl mx-auto space-y-6">
-            <div className="flex items-center">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="mr-2"
-                onClick={() => navigate('/training')}
-              >
-                <ArrowLeft className="h-4 w-4 mr-1" /> Back
-              </Button>
-              <h1 className="text-2xl font-bold tracking-tight">
-                {isLoading ? 'Loading...' : videoData?.title}
-              </h1>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="mr-2"
+                  onClick={() => navigate('/training')}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-1" /> Back
+                </Button>
+                <h1 className="text-2xl font-bold tracking-tight">
+                  {isLoading ? 'Loading...' : videoData?.title}
+                </h1>
+              </div>
+              {videoData?.category && (
+                <Badge variant="outline">{videoData.category}</Badge>
+              )}
             </div>
             
             {isLoading ? (
@@ -274,10 +295,14 @@ export default function TrainingVideo() {
                       onPause={() => setIsPlaying(false)}
                       onEnded={handleVideoEnded}
                       onLoadedMetadata={() => {
-                        if (videoRef.current && userProgress?.last_position) {
-                          videoRef.current.currentTime = userProgress.last_position;
+                        if (videoRef.current) {
+                          if (userProgress?.last_position) {
+                            videoRef.current.currentTime = userProgress.last_position;
+                          }
+                          setDuration(videoRef.current.duration);
                         }
                       }}
+                      autoPlay={false}
                     />
                   ) : (
                     <div className="w-full h-80 flex items-center justify-center bg-muted">
@@ -312,8 +337,10 @@ export default function TrainingVideo() {
                     <CardDescription>
                       {userProgress?.completed ? (
                         <span className="text-green-500">You've completed this training!</span>
-                      ) : (
+                      ) : quizData.length > 0 ? (
                         <span>Watch the entire video to take the quiz</span>
+                      ) : (
+                        <span>Watch the entire video to complete this training</span>
                       )}
                     </CardDescription>
                   </CardHeader>
@@ -321,6 +348,14 @@ export default function TrainingVideo() {
                     <div className="prose max-w-none">
                       <p>{videoData?.description}</p>
                     </div>
+                    
+                    {quizData.length > 0 && userProgress?.watched_percentage >= 90 && !userProgress?.quiz_completed && (
+                      <div className="mt-4">
+                        <Button onClick={() => setShowQuiz(true)}>
+                          Take Quiz Now
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </>
