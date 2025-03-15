@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,7 +64,7 @@ export function TrainingVideoForm({ onComplete }: TrainingVideoFormProps) {
     const filePath = `training-videos/${fileName}`;
     
     const { data, error } = await supabase.storage
-      .from('videos')
+      .from('training_videos')
       .upload(filePath, videoFile, {
         cacheControl: '3600',
         upsert: false
@@ -73,9 +72,8 @@ export function TrainingVideoForm({ onComplete }: TrainingVideoFormProps) {
       
     if (error) throw error;
     
-    // Get public URL
     const { data: { publicUrl } } = supabase.storage
-      .from('videos')
+      .from('training_videos')
       .getPublicUrl(filePath);
       
     return publicUrl;
@@ -90,7 +88,7 @@ export function TrainingVideoForm({ onComplete }: TrainingVideoFormProps) {
     const filePath = `thumbnails/${fileName}`;
     
     const { data, error } = await supabase.storage
-      .from('videos')
+      .from('training_videos')
       .upload(filePath, thumbnailFile, {
         cacheControl: '3600',
         upsert: false
@@ -98,9 +96,8 @@ export function TrainingVideoForm({ onComplete }: TrainingVideoFormProps) {
       
     if (error) throw error;
     
-    // Get public URL
     const { data: { publicUrl } } = supabase.storage
-      .from('videos')
+      .from('training_videos')
       .getPublicUrl(filePath);
       
     return publicUrl;
@@ -136,7 +133,6 @@ export function TrainingVideoForm({ onComplete }: TrainingVideoFormProps) {
     try {
       setIsSubmitting(true);
       
-      // Get current user session for user ID
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
         toast({
@@ -149,7 +145,6 @@ export function TrainingVideoForm({ onComplete }: TrainingVideoFormProps) {
       let finalVideoUrl = videoUrl;
       let finalThumbnailUrl = thumbnailUrl;
       
-      // Upload files if selected
       if (uploadMethod === "file") {
         try {
           finalVideoUrl = await uploadVideo() || "";
@@ -167,7 +162,6 @@ export function TrainingVideoForm({ onComplete }: TrainingVideoFormProps) {
         }
       }
       
-      // Insert the new training video
       const { data, error } = await supabase
         .from('training_videos')
         .insert({
@@ -187,11 +181,9 @@ export function TrainingVideoForm({ onComplete }: TrainingVideoFormProps) {
         description: "Training video added successfully",
       });
       
-      // Call the onComplete callback if provided
       if (onComplete) {
         onComplete();
       } else {
-        // Navigate to the training videos page
         navigate("/training");
       }
     } catch (error) {
