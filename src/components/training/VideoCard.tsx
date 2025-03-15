@@ -26,6 +26,7 @@ export function VideoCard({ video }: VideoCardProps) {
   const isCompleted = video.progress?.completed || false;
   const isQuizCompleted = video.progress?.quiz_completed || false;
   const hasQuiz = video.has_quiz;
+  const isQuizUnlocked = progress >= 50;
   
   return (
     <Card className="h-full flex flex-col">
@@ -87,17 +88,17 @@ export function VideoCard({ video }: VideoCardProps) {
             <Button 
               variant={isQuizCompleted ? "outline" : "secondary"}
               onClick={handleTakeQuiz}
-              disabled={progress < 50 && !isQuizCompleted}
+              disabled={!isQuizUnlocked && !isQuizCompleted}
             >
               {isQuizCompleted ? (
                 <>
                   <Check className="h-4 w-4 mr-2" />
                   Quiz Completed
                 </>
-              ) : progress < 50 ? (
+              ) : !isQuizUnlocked ? (
                 <>
                   <Clock className="h-4 w-4 mr-2" />
-                  Watch More to Unlock Quiz
+                  Watch 50% to Unlock Quiz
                 </>
               ) : (
                 <>

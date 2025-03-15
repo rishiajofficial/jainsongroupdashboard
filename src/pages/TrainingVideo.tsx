@@ -29,6 +29,7 @@ export default function TrainingVideo() {
   const [quizData, setQuizData] = useState<any[]>([]);
   const [lastProgressUpdate, setLastProgressUpdate] = useState(0);
   const [progressUpdateCount, setProgressUpdateCount] = useState(0);
+  const [quizUnlocked, setQuizUnlocked] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -99,6 +100,10 @@ export default function TrainingVideo() {
           setUserProgress(newProgress);
         } else {
           setUserProgress(progress);
+          // Check if quiz should be unlocked
+          if (progress && progress.watched_percentage >= 50) {
+            setQuizUnlocked(true);
+          }
         }
         
         // Fetch quiz questions
@@ -127,9 +132,12 @@ export default function TrainingVideo() {
         // but hasn't completed the quiz yet
         if (shouldShowQuiz) {
           setShowQuiz(true);
-        } else if (progress && progress.watched_percentage >= 90 && 
+        } else if (progress && progress.watched_percentage >= 50 && 
             !progress.quiz_completed && quiz && quiz.length > 0) {
-          setShowQuiz(true);
+          setQuizUnlocked(true);
+          if (queryParams.get('autoShowQuiz') === 'true') {
+            setShowQuiz(true);
+          }
         }
       } catch (error) {
         console.error('Error fetching training video:', error);
@@ -215,17 +223,35 @@ export default function TrainingVideo() {
           
         if (!error && data) {
           setUserProgress(data);
+          
+          // Check if quiz should be unlocked (at 50% progress)
+          if (percentage >= 50 && !quizUnlocked) {
+            console.log("Unlocking quiz at 50% progress");
+            setQuizUnlocked(true);
+            
+            // Show a toast notification
+            toast({
+              title: "Quiz Available",
+              description: "You can now take the quiz for this training video!",
+            });
+          }
         } else if (error) {
           console.error('Error updating progress:', error);
         }
         
-        // Show quiz when video is almost complete
-        if (percentage >= 90 && !userProgress.quiz_completed && quizData.length > 0) {
-          setShowQuiz(true);
+        // Show quiz automatically when video is complete
+        if (percentage >= 98 && !userProgress.quiz_completed && quizData.length > 0) {
           if (videoRef.current) {
             videoRef.current.pause();
             setIsPlaying(false);
           }
+          setShowQuiz(true);
+          
+          // Show a toast notification
+          toast({
+            title: "Video Completed",
+            description: "Let's take the quiz now to complete your training!",
+          });
         }
       } catch (err) {
         console.error('Error updating progress:', err);
@@ -440,7 +466,7 @@ export default function TrainingVideo() {
                 </div>
                 
                 <div className="flex space-x-2 mt-4 justify-center">
-                  {quizData.length > 0 && userProgress?.watched_percentage >= 50 && !userProgress?.quiz_completed && (
+                  {quizData.length > 0 && quizUnlocked && !userProgress?.quiz_completed && (
                     <Button onClick={handleTakeQuiz} className="gap-2">
                       <GraduationCap className="h-4 w-4" /> Start Quiz
                     </Button>
@@ -458,13 +484,17 @@ export default function TrainingVideo() {
                         {userProgress?.completed ? (
                           <span className="text-green-500">You've completed this training!</span>
                         ) : quizData.length > 0 ? (
-                          <span>Watch the entire video to take the quiz</span>
+                          <span>
+                            {quizUnlocked 
+                              ? "You've watched enough to take the quiz" 
+                              : "Watch 50% of the video to unlock the quiz"}
+                          </span>
                         ) : (
                           <span>Watch the entire video to complete this training</span>
                         )}
                       </CardDescription>
                     </div>
-                    {quizData.length > 0 && userProgress?.watched_percentage >= 50 && !userProgress?.quiz_completed && (
+                    {quizData.length > 0 && quizUnlocked && !userProgress?.quiz_completed && (
                       <Button onClick={handleTakeQuiz} size="sm" className="gap-2">
                         <GraduationCap className="h-4 w-4" /> Go to Quiz
                       </Button>
@@ -475,7 +505,7 @@ export default function TrainingVideo() {
                       <p>{videoData?.description}</p>
                     </div>
                   </CardContent>
-                  {quizData.length > 0 && userProgress?.watched_percentage >= 50 && !userProgress?.quiz_completed && (
+                  {quizData.length > 0 && quizUnlocked && !userProgress?.quiz_completed && (
                     <CardFooter>
                       <Button onClick={handleTakeQuiz} className="w-full">
                         Take Quiz Now
