@@ -178,6 +178,14 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
     
     const rule = accessRules.find(r => r.page_path === path);
     
+    // Log for debugging the training page visibility
+    if (path === '/training') {
+      console.log(`Checking training page visibility for ${role}:`, 
+        rule ? 
+        `Rule found - enabled: ${rule.is_enabled}, allowed roles: ${rule.allowed_roles.join(', ')}` : 
+        'No rule found');
+    }
+    
     // If no rule exists or the page is disabled, it's not visible
     if (!rule || !rule.is_enabled) return false;
     

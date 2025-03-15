@@ -15,6 +15,7 @@ export function CandidateNavigation({ variant, onClose = () => {} }: CandidateNa
   
   // Refresh rules when component mounts
   useEffect(() => {
+    console.log("CandidateNavigation - Refreshing page access rules");
     refreshRules();
   }, [refreshRules]);
   
@@ -67,8 +68,12 @@ export function CandidateNavigation({ variant, onClose = () => {} }: CandidateNa
     }
   ];
 
+  // Add some debug logging to see if the training page is considered visible
+  console.log("Training page visible:", isPageVisible("/training", "candidate"));
+
   // Filter items based on visibility
   const visibleItems = navItems.filter(item => item.isVisible);
+  console.log("Visible navigation items:", visibleItems);
 
   return (
     <div className={isMobile ? "space-y-4" : "flex items-center gap-6"}>

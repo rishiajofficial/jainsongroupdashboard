@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import {
@@ -25,6 +24,7 @@ const navigationItems = {
     { href: "/jobs", label: "Browse Jobs", icon: Briefcase },
     { href: "/applications", label: "My Applications", icon: FileText },
     { href: "/assessments", label: "My Assessments", icon: ClipboardCheck },
+    { href: "/training", label: "Training Videos", icon: GraduationCap },
     { href: "/profile", label: "My Profile", icon: Users },
   ],
   salesperson: [
