@@ -14,6 +14,7 @@ export interface TrainingVideo {
   created_at: string;
   created_by: string;
   category: string;
+  order_number?: number;
   progress?: {
     watched_percentage: number;
     completed: boolean;
@@ -60,6 +61,7 @@ export const useTrainingVideos = () => {
       const { data: videosData, error: videosError } = await supabase
         .from('training_videos')
         .select('*')
+        .order('order_number', { ascending: true })
         .order('created_at', { ascending: false });
         
       if (videosError) throw videosError;

@@ -31,6 +31,7 @@ export default function TrainingVideo() {
   const [progressUpdateCount, setProgressUpdateCount] = useState(0);
   const [quizUnlocked, setQuizUnlocked] = useState(false);
   const [videoWatched, setVideoWatched] = useState(false);
+  const [watchedPercentage, setWatchedPercentage] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -99,8 +100,11 @@ export default function TrainingVideo() {
             
           if (createError) throw createError;
           setUserProgress(newProgress);
+          setWatchedPercentage(0);
         } else {
           setUserProgress(progress);
+          setWatchedPercentage(progress?.watched_percentage || 0);
+          
           // Check if quiz should be unlocked
           if (progress && progress.watched_percentage >= 50) {
             setQuizUnlocked(true);
@@ -194,6 +198,9 @@ export default function TrainingVideo() {
         
       if (error) {
         console.error('Error saving final progress:', error);
+      } else if (data) {
+        setUserProgress(data);
+        setWatchedPercentage(data.watched_percentage);
       }
     } catch (err) {
       console.error('Error in cleanup function:', err);
@@ -211,6 +218,7 @@ export default function TrainingVideo() {
     
     setCurrentTime(currentTime);
     setDuration(duration);
+    setWatchedPercentage(percentage);
     
     // Force a UI update to ensure progress bar moves
     setProgressUpdateCount(prev => prev + 1);
@@ -238,6 +246,7 @@ export default function TrainingVideo() {
           
         if (!error && data) {
           setUserProgress(data);
+          setWatchedPercentage(data.watched_percentage);
           
           // Check if quiz should be unlocked (at 50% progress)
           if (percentage >= 50 && !quizUnlocked) {
@@ -310,6 +319,7 @@ export default function TrainingVideo() {
       if (error) throw error;
       
       setUserProgress(data);
+      setWatchedPercentage(100);
       
       toast({
         description: "Congratulations! You've completed this training module.",
@@ -493,9 +503,9 @@ export default function TrainingVideo() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Progress</span>
-                    <span>{userProgress?.watched_percentage || 0}%</span>
+                    <span>{watchedPercentage}%</span>
                   </div>
-                  <Progress value={userProgress?.watched_percentage || 0} />
+                  <Progress value={watchedPercentage} />
                   {quizData.length > 0 && !quizUnlocked && (
                     <p className="text-xs text-muted-foreground">
                       <AlertCircle className="h-3 w-3 inline-block mr-1" />
