@@ -1,5 +1,5 @@
 
-import { GraduationCap, XCircle } from "lucide-react";
+import { GraduationCap, XCircle, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface VideoControlsProps {
@@ -19,10 +19,16 @@ export function VideoControls({
 }: VideoControlsProps) {
   return (
     <div className="flex space-x-2 mt-4 justify-center">
-      {hasQuiz && (quizUnlocked && !quizCompleted) && (
-        <Button onClick={onTakeQuiz} className="gap-2">
-          <GraduationCap className="h-4 w-4" /> Start Quiz
-        </Button>
+      {hasQuiz && (
+        quizCompleted ? (
+          <Button variant="outline" className="gap-2 bg-green-50 text-green-600 border-green-200" disabled>
+            <Check className="h-4 w-4" /> Quiz Completed
+          </Button>
+        ) : quizUnlocked ? (
+          <Button onClick={onTakeQuiz} className="gap-2">
+            <GraduationCap className="h-4 w-4" /> Start Quiz
+          </Button>
+        ) : null
       )}
       <Button variant="outline" onClick={onQuitTraining}>
         <XCircle className="mr-1 h-4 w-4" /> Quit Training
