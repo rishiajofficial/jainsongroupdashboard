@@ -9,6 +9,7 @@ interface QuizOptionProps {
   isSelected: boolean;
   showResults: boolean;
   isCorrect?: boolean | null;
+  disabled?: boolean;
 }
 
 export function QuizOption({ 
@@ -16,15 +17,16 @@ export function QuizOption({
   questionId, 
   isSelected, 
   showResults, 
-  isCorrect 
+  isCorrect,
+  disabled = false
 }: QuizOptionProps) {
   if (!showResults) {
     return (
-      <div className="flex items-center space-x-2 rounded-md border p-3">
-        <RadioGroupItem value={option.id} id={option.id} />
+      <div className={`flex items-center space-x-2 rounded-md border p-3 ${disabled ? 'opacity-60' : ''}`}>
+        <RadioGroupItem value={option.id} id={option.id} disabled={disabled} />
         <label 
           htmlFor={option.id} 
-          className="flex-1 cursor-pointer font-medium"
+          className={`flex-1 cursor-pointer font-medium ${disabled ? 'cursor-not-allowed' : ''}`}
         >
           {option.option_text}
         </label>

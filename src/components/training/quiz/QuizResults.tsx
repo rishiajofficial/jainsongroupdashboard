@@ -37,6 +37,9 @@ export function QuizResults({
             : `You need at least ${passingScore}% to pass this quiz.`
           }
         </p>
+        <div className="mt-4 text-2xl font-bold">
+          Your Score: {score}%
+        </div>
       </div>
       
       <div className="space-y-4">

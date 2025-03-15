@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Header } from "@/components/ui/Header";
 import { SideNav } from "@/components/ui/dashboard/SideNav";
@@ -137,7 +138,7 @@ export default function TrainingManage() {
                 </TabsContent>
                 
                 <TabsContent value="quizzes" className="space-y-6">
-                  <QuizManagement />
+                  <QuizManagement onEditQuiz={handleEditQuiz} />
                 </TabsContent>
               </Tabs>
             )}

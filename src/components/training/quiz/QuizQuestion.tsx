@@ -2,6 +2,7 @@
 import { RadioGroup } from "@/components/ui/radio-group";
 import { QuizOption } from "./QuizOption";
 import { QuizQuestion as QuizQuestionType } from "./types";
+import { useState } from "react";
 
 interface QuizQuestionProps {
   question: QuizQuestionType;
@@ -16,6 +17,15 @@ export function QuizQuestion({
   onAnswerSelect, 
   showResults 
 }: QuizQuestionProps) {
+  const [hasAnswered, setHasAnswered] = useState(false);
+  
+  const handleAnswer = (optionId: string) => {
+    if (!hasAnswered) {
+      onAnswerSelect(optionId);
+      setHasAnswered(true);
+    }
+  };
+
   if (showResults) {
     return (
       <div className="border rounded-md p-4">
@@ -50,7 +60,7 @@ export function QuizQuestion({
       
       <RadioGroup 
         value={selectedOptionId} 
-        onValueChange={onAnswerSelect}
+        onValueChange={hasAnswered ? () => {} : handleAnswer}
         className="space-y-3"
       >
         {question.training_quiz_options.map(option => (
@@ -60,6 +70,7 @@ export function QuizQuestion({
             questionId={question.id}
             isSelected={selectedOptionId === option.id}
             showResults={false}
+            disabled={hasAnswered && selectedOptionId !== option.id}
           />
         ))}
       </RadioGroup>

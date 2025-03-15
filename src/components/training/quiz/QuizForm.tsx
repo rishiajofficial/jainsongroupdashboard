@@ -1,9 +1,8 @@
 
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -37,7 +36,6 @@ export function QuizForm({ videoId, existingQuestions = [], onComplete, onCancel
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const form = useForm();
   
   // Load existing questions if provided
   useEffect(() => {
@@ -252,7 +250,7 @@ export function QuizForm({ videoId, existingQuestions = [], onComplete, onCancel
               </div>
               
               <div className="space-y-2">
-                <FormLabel>Question Text</FormLabel>
+                <div className="font-medium text-sm">Question Text</div>
                 <Input
                   value={question.question}
                   onChange={(e) => handleQuestionChange(questionIndex, e.target.value)}
@@ -261,7 +259,7 @@ export function QuizForm({ videoId, existingQuestions = [], onComplete, onCancel
               </div>
               
               <div className="space-y-4">
-                <FormLabel>Options</FormLabel>
+                <div className="font-medium text-sm">Options</div>
                 {question.options.map((option, optionIndex) => (
                   <div key={optionIndex} className="flex items-center space-x-3">
                     <Checkbox
