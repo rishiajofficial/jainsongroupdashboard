@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { UserRole } from '@/pages/DashboardPage';
 import { useEffect, useState } from 'react';
+import { usePageAccess } from '@/contexts/PageAccessContext';
 
 // Define navigation items by user role
 const navigationItems = {
@@ -57,12 +58,34 @@ interface SideNavProps {
 export function SideNav({ role }: SideNavProps) {
   const location = useLocation();
   const [visibleItems, setVisibleItems] = useState<any[]>([]);
+  const { isPageVisible, refreshRules } = usePageAccess();
   const defaultItems = navigationItems[role] || navigationItems.candidate;
   
-  // Update visible items when role changes
+  // Update visible items when role changes and check visibility
   useEffect(() => {
-    setVisibleItems(defaultItems);
-  }, [role, defaultItems]);
+    // For admin role, show all items by default
+    if (role === 'admin') {
+      setVisibleItems(defaultItems);
+      return;
+    }
+    
+    // Filter items based on page access rules
+    const filteredItems = defaultItems.filter(item => {
+      // Dashboard is always visible
+      if (item.href === '/dashboard' || item.href === '/profile') {
+        return true;
+      }
+      
+      return isPageVisible(item.href, role);
+    });
+    
+    setVisibleItems(filteredItems);
+  }, [role, defaultItems, isPageVisible]);
+  
+  // Refresh rules when component mounts
+  useEffect(() => {
+    refreshRules();
+  }, [refreshRules]);
 
   return (
     <nav className="w-56 bg-background border-r border-border min-h-[calc(100vh-4rem)] pt-6">

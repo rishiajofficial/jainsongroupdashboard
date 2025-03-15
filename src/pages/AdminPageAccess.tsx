@@ -23,7 +23,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { usePageAccess } from "@/contexts/PageAccessContext";
 import { PageAccessRule, CONFIGURABLE_PAGES } from "@/types/pageAccess";
 import { UserRole } from "@/pages/DashboardPage";
-import { AlertCircle, Lock, RefreshCw, Settings2, Check, X } from "lucide-react";
+import { AlertCircle, Lock, RefreshCcw, Settings2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 const SelectAllControl = ({ role, filteredRules }: { role: UserRole, filteredRules: PageAccessRule[] }) => {
@@ -76,11 +76,6 @@ const RoleToggle = ({ rule, role }: { rule: PageAccessRule, role: UserRole }) =>
       const newAllowedRoles = isEnabled
         ? rule.allowed_roles.filter(r => r !== role)
         : [...rule.allowed_roles, role];
-      
-      if (newAllowedRoles.length === 0) {
-        toast.error("At least one role must have access to this page");
-        return;
-      }
       
       await updateRule(rule.id, { allowed_roles: newAllowedRoles });
     } catch (error) {
@@ -183,7 +178,7 @@ const AdminPageAccess = () => {
                     size="sm"
                     disabled={isLoading}
                   >
-                    <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                    <RefreshCcw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                     Refresh
                   </Button>
                 </div>

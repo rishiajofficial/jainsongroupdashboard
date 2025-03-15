@@ -85,6 +85,8 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
 
   const updateRule = async (ruleId: string, updates: Partial<PageAccessRule>) => {
     try {
+      // If we're updating allowed_roles and it's empty, don't block the update
+      // This allows removing access from all roles
       const { error } = await supabase
         .from('page_access_rules')
         .update(updates)
@@ -98,7 +100,20 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
         rule.id === ruleId ? { ...rule, ...updates } : rule
       ));
       
-      toast.success('Page access rule updated successfully');
+      // Provide more specific toast messages based on what was updated
+      if (updates.is_enabled !== undefined) {
+        const rule = accessRules.find(r => r.id === ruleId);
+        const action = updates.is_enabled ? 'enabled' : 'disabled';
+        toast.success(`${rule?.page_name} page ${action}. Navigation will be updated.`);
+      } else if (updates.allowed_roles !== undefined) {
+        const rule = accessRules.find(r => r.id === ruleId);
+        const roleChanges = updates.allowed_roles.length > 0 
+          ? `Updated roles with access to ${rule?.page_name}` 
+          : `Removed all role access from ${rule?.page_name}`;
+        toast.success(roleChanges);
+      } else {
+        toast.success('Page access rule updated successfully');
+      }
     } catch (error) {
       console.error('Error updating page access rule:', error);
       toast.error('Failed to update page access settings');
@@ -120,7 +135,7 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
         
         return {
           id: rule.id,
-          allowed_roles: newAllowedRoles.length > 0 ? newAllowedRoles : [role]
+          allowed_roles: newAllowedRoles
         };
       });
       
@@ -138,7 +153,7 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
       }
       
       await fetchRules();
-      toast.success(`${enabled ? 'Enabled' : 'Disabled'} all pages for ${role} role`);
+      toast.success(`${enabled ? 'Enabled' : 'Disabled'} all pages for ${role} role. Navigation will update accordingly.`);
     } catch (error) {
       console.error('Error bulk updating access rules:', error);
       toast.error('Failed to update multiple page access settings');
@@ -146,14 +161,22 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
   };
 
   const isPageVisible = useCallback((path: string, role: UserRole): boolean => {
+    // Admin always has access to all pages
     if (role === 'admin') return true;
     
     if (isLoading) return true;
     
+    // Some paths should always be accessible
+    if (path === '/dashboard' || path === '/profile' || path === '/settings') {
+      return true;
+    }
+    
     const rule = accessRules.find(r => r.page_path === path);
     
+    // If no rule exists or the page is disabled, it's not visible
     if (!rule || !rule.is_enabled) return false;
     
+    // Check if the user's role is in the allowed roles
     return rule.allowed_roles.includes(role);
   }, [accessRules, isLoading]);
 
