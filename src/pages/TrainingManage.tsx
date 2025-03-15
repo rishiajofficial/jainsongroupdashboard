@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Header } from "@/components/ui/Header";
 import { SideNav } from "@/components/ui/dashboard/SideNav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Image } from "lucide-react";
 import { TrainingVideoForm } from "@/components/training/TrainingVideoForm";
 import { VideoCardList } from "@/components/training/VideoCardList";
 import { QuizManagement } from "@/components/training/QuizManagement";
@@ -20,6 +19,7 @@ export default function TrainingManage() {
   const [showQuizForm, setShowQuizForm] = useState<boolean>(false);
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [existingQuestions, setExistingQuestions] = useState<any[]>([]);
+  const [generatingThumbnails, setGeneratingThumbnails] = useState<boolean>(false);
   const { toast } = useToast();
 
   const handleFormComplete = async () => {
@@ -31,7 +31,6 @@ export default function TrainingManage() {
     setSelectedVideoId(videoId);
     
     try {
-      // Fetch existing questions if any
       const { data, error } = await supabase
         .from('training_quiz_questions')
         .select(`
@@ -49,7 +48,6 @@ export default function TrainingManage() {
       if (error) throw error;
       
       if (data && data.length > 0) {
-        // Transform data for QuizForm
         const formattedQuestions = data.map(q => ({
           question: q.question,
           options: q.training_quiz_options.map(o => ({
@@ -63,9 +61,7 @@ export default function TrainingManage() {
         setExistingQuestions([]);
       }
       
-      // Switch to quiz form
       setShowQuizForm(true);
-      
     } catch (error) {
       console.error('Error fetching quiz questions:', error);
       toast({
@@ -82,6 +78,54 @@ export default function TrainingManage() {
     setExistingQuestions([]);
   };
 
+  const generateThumbnails = async () => {
+    setGeneratingThumbnails(true);
+    
+    try {
+      const videosWithoutThumbnails = videos.filter(video => !video.thumbnail_url);
+      
+      if (videosWithoutThumbnails.length === 0) {
+        toast({
+          description: "All videos already have thumbnails.",
+        });
+        setGeneratingThumbnails(false);
+        return;
+      }
+      
+      toast({
+        description: `Generating thumbnails for ${videosWithoutThumbnails.length} videos...`,
+      });
+      
+      for (const video of videosWithoutThumbnails) {
+        const videoUrl = new URL(video.video_url);
+        const thumbnailUrl = `${videoUrl.origin}${videoUrl.pathname}/thumbnail`;
+        
+        const { error } = await supabase
+          .from('training_videos')
+          .update({ thumbnail_url: thumbnailUrl })
+          .eq('id', video.id);
+          
+        if (error) {
+          console.error(`Error updating thumbnail for video ${video.id}:`, error);
+        }
+      }
+      
+      await refreshVideos();
+      
+      toast({
+        description: `Successfully generated thumbnails for ${videosWithoutThumbnails.length} videos.`,
+      });
+    } catch (error) {
+      console.error('Error generating thumbnails:', error);
+      toast({
+        description: "Failed to generate thumbnails",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingThumbnails(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -92,10 +136,21 @@ export default function TrainingManage() {
             <div className="flex justify-between items-center">
               <h1 className="text-3xl font-bold tracking-tight">Manage Training</h1>
               {!showAddForm && !showQuizForm && activeTab === "videos" && (
-                <Button onClick={() => setShowAddForm(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add New Video
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={generateThumbnails} 
+                    disabled={generatingThumbnails || loading || videos.length === 0}
+                    className="mr-2"
+                  >
+                    <Image className="h-4 w-4 mr-2" />
+                    Generate Thumbnails
+                  </Button>
+                  <Button onClick={() => setShowAddForm(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add New Video
+                  </Button>
+                </div>
               )}
             </div>
             
