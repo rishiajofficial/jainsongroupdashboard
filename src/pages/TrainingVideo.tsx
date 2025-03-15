@@ -3,12 +3,12 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/ui/Header";
 import { SideNav } from "@/components/ui/dashboard/SideNav";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, PlayCircle, PauseCircle } from "lucide-react";
+import { ArrowLeft, PlayCircle, PauseCircle, ChevronRight, XCircle } from "lucide-react";
 import { Quiz } from "@/components/training/Quiz";
 import { Badge } from "@/components/ui/badge";
 
@@ -24,6 +24,7 @@ export default function TrainingVideo() {
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizData, setQuizData] = useState<any[]>([]);
   const [lastProgressUpdate, setLastProgressUpdate] = useState(0);
+  const [progressUpdateCount, setProgressUpdateCount] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -135,26 +136,22 @@ export default function TrainingVideo() {
     }
     
     fetchData();
+
+    // Cleanup function to save progress on component unmount
+    return () => {
+      saveProgress();
+    };
   }, [id]);
   
-  const handleTimeUpdate = async () => {
+  const saveProgress = async () => {
     if (!videoRef.current || !userProgress || !videoData) return;
     
     const currentTime = videoRef.current.currentTime;
     const duration = videoRef.current.duration;
     const percentage = Math.floor((currentTime / duration) * 100);
     
-    setCurrentTime(currentTime);
-    setDuration(duration);
-    
-    // Update progress every 5 seconds or when percentage changes significantly
-    const now = Date.now();
-    if (
-      Math.abs(percentage - userProgress.watched_percentage) >= 5 || 
-      now - lastProgressUpdate > 5000
-    ) {
-      console.log(`Updating progress: ${percentage}%`);
-      setLastProgressUpdate(now);
+    try {
+      console.log(`Saving final progress: ${percentage}%`);
       
       const { data, error } = await supabase
         .from('training_progress')
@@ -167,26 +164,101 @@ export default function TrainingVideo() {
         .select()
         .single();
         
-      if (!error && data) {
-        setUserProgress(data);
-      } else if (error) {
-        console.error('Error updating progress:', error);
+      if (error) {
+        console.error('Error saving final progress:', error);
       }
+    } catch (err) {
+      console.error('Error in cleanup function:', err);
+    }
+  };
+  
+  const handleTimeUpdate = async () => {
+    if (!videoRef.current || !userProgress || !videoData) return;
+    
+    const currentTime = videoRef.current.currentTime;
+    const duration = videoRef.current.duration;
+    const percentage = Math.floor((currentTime / duration) * 100);
+    
+    setCurrentTime(currentTime);
+    setDuration(duration);
+    
+    // Force a UI update to ensure progress bar moves
+    setProgressUpdateCount(prev => prev + 1);
+    
+    // Update progress every 5 seconds or when percentage changes significantly
+    const now = Date.now();
+    if (
+      Math.abs(percentage - userProgress.watched_percentage) >= 5 || 
+      now - lastProgressUpdate > 5000
+    ) {
+      console.log(`Updating progress: ${percentage}%, Time: ${currentTime}/${duration}`);
+      setLastProgressUpdate(now);
       
-      // Show quiz when video is complete
-      if (percentage >= 90 && !userProgress.quiz_completed && quizData.length > 0) {
-        setShowQuiz(true);
-        if (videoRef.current) {
-          videoRef.current.pause();
-          setIsPlaying(false);
+      try {
+        const { data, error } = await supabase
+          .from('training_progress')
+          .update({
+            watched_percentage: percentage,
+            last_position: currentTime,
+            last_updated_at: new Date().toISOString()
+          })
+          .eq('id', userProgress.id)
+          .select()
+          .single();
+          
+        if (!error && data) {
+          setUserProgress(data);
+        } else if (error) {
+          console.error('Error updating progress:', error);
         }
+        
+        // Show quiz when video is almost complete
+        if (percentage >= 90 && !userProgress.quiz_completed && quizData.length > 0) {
+          setShowQuiz(true);
+          if (videoRef.current) {
+            videoRef.current.pause();
+            setIsPlaying(false);
+          }
+        }
+      } catch (err) {
+        console.error('Error updating progress:', err);
       }
     }
   };
   
   const handleVideoEnded = () => {
-    if (!userProgress.quiz_completed && quizData.length > 0) {
+    // Mark as completed if there's no quiz
+    if (quizData.length === 0) {
+      markAsCompleted();
+    } else if (!userProgress.quiz_completed) {
       setShowQuiz(true);
+    }
+  };
+  
+  const markAsCompleted = async () => {
+    if (!userProgress) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('training_progress')
+        .update({
+          completed: true,
+          completed_at: new Date().toISOString(),
+          watched_percentage: 100
+        })
+        .eq('id', userProgress.id)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      setUserProgress(data);
+      
+      toast({
+        description: "Congratulations! You've completed this training module.",
+      });
+    } catch (error) {
+      console.error('Error marking as completed:', error);
     }
   };
   
@@ -199,6 +271,19 @@ export default function TrainingVideo() {
       }
       setIsPlaying(!isPlaying);
     }
+  };
+  
+  const handleTakeQuiz = () => {
+    setShowQuiz(true);
+    if (videoRef.current) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+  
+  const handleQuitTraining = () => {
+    saveProgress();
+    navigate('/training');
   };
   
   const handleQuizComplete = async (score: number, passed: boolean) => {
@@ -302,6 +387,7 @@ export default function TrainingVideo() {
                           setDuration(videoRef.current.duration);
                         }
                       }}
+                      key={`video-player-${progressUpdateCount}`}
                       autoPlay={false}
                     />
                   ) : (
@@ -331,6 +417,17 @@ export default function TrainingVideo() {
                   <Progress value={userProgress?.watched_percentage || 0} />
                 </div>
                 
+                <div className="flex space-x-2 mt-4 justify-center">
+                  {quizData.length > 0 && userProgress?.watched_percentage >= 50 && (
+                    <Button onClick={handleTakeQuiz}>
+                      Start Quiz <ChevronRight className="ml-1 h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button variant="outline" onClick={handleQuitTraining}>
+                    <XCircle className="mr-1 h-4 w-4" /> Quit Training
+                  </Button>
+                </div>
+                
                 <Card>
                   <CardHeader>
                     <CardTitle>{videoData?.title}</CardTitle>
@@ -348,15 +445,14 @@ export default function TrainingVideo() {
                     <div className="prose max-w-none">
                       <p>{videoData?.description}</p>
                     </div>
-                    
-                    {quizData.length > 0 && userProgress?.watched_percentage >= 90 && !userProgress?.quiz_completed && (
-                      <div className="mt-4">
-                        <Button onClick={() => setShowQuiz(true)}>
-                          Take Quiz Now
-                        </Button>
-                      </div>
-                    )}
                   </CardContent>
+                  {quizData.length > 0 && userProgress?.watched_percentage >= 50 && !userProgress?.quiz_completed && (
+                    <CardFooter>
+                      <Button onClick={handleTakeQuiz}>
+                        Take Quiz Now
+                      </Button>
+                    </CardFooter>
+                  )}
                 </Card>
               </>
             )}

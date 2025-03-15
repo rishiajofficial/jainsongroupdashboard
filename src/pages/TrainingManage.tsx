@@ -66,25 +66,31 @@ export default function TrainingManage() {
   const handleDeleteVideo = async (id: string) => {
     try {
       // First, delete associated quiz questions and options
-      // Delete quiz options associated with the questions of this video
-      const { error: quizOptionsError } = await supabase
-        .from('training_quiz_options')
-        .delete()
-        .eq('question_id', function(builder) {
-          builder.select('id')
-            .from('training_quiz_questions')
-            .eq('video_id', id);
-        });
-        
-      if (quizOptionsError) throw quizOptionsError;
-      
-      // Delete quiz questions
-      const { error: quizQuestionsError } = await supabase
+      // Delete quiz options for the video
+      const { data: quizQuestions } = await supabase
         .from('training_quiz_questions')
-        .delete()
+        .select('id')
         .eq('video_id', id);
+      
+      if (quizQuestions && quizQuestions.length > 0) {
+        const questionIds = quizQuestions.map(q => q.id);
         
-      if (quizQuestionsError) throw quizQuestionsError;
+        // Delete quiz options linked to those questions
+        const { error: quizOptionsError } = await supabase
+          .from('training_quiz_options')
+          .delete()
+          .in('question_id', questionIds);
+          
+        if (quizOptionsError) throw quizOptionsError;
+        
+        // Delete quiz questions
+        const { error: quizQuestionsError } = await supabase
+          .from('training_quiz_questions')
+          .delete()
+          .eq('video_id', id);
+          
+        if (quizQuestionsError) throw quizQuestionsError;
+      }
       
       // Delete progress records
       const { error: progressError } = await supabase
@@ -156,7 +162,7 @@ export default function TrainingManage() {
             
             {showAddForm ? (
               <div className="mb-6">
-                <TrainingVideoForm />
+                <TrainingVideoForm onComplete={refreshVideos} />
                 <div className="mt-4 flex justify-end">
                   <Button variant="outline" onClick={() => setShowAddForm(false)}>
                     Cancel
@@ -172,7 +178,7 @@ export default function TrainingManage() {
                 
                 <TabsContent value="videos" className="space-y-6">
                   {loading ? (
-                    <div className="grid grid-cols-1 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {[1, 2, 3].map(i => (
                         <Card key={i} className="animate-pulse">
                           <CardHeader>
@@ -207,13 +213,13 @@ export default function TrainingManage() {
                       </CardFooter>
                     </Card>
                   ) : (
-                    <div className="grid grid-cols-1 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {videos.map((video) => (
-                        <Card key={video.id}>
-                          <CardHeader>
+                        <Card key={video.id} className="flex flex-col">
+                          <CardHeader className="pb-2">
                             <div className="flex justify-between">
-                              <CardTitle>{video.title}</CardTitle>
-                              <div className="flex space-x-2">
+                              <CardTitle className="text-xl">{video.title}</CardTitle>
+                              <div className="flex flex-wrap space-x-2">
                                 <Badge variant="outline">{video.category || "Uncategorized"}</Badge>
                                 {video.has_quiz && (
                                   <Badge variant="secondary">Has Quiz</Badge>
@@ -224,22 +230,16 @@ export default function TrainingManage() {
                               Added on {new Date(video.created_at).toLocaleDateString()}
                             </CardDescription>
                           </CardHeader>
-                          <CardContent>
-                            <p className="text-sm text-muted-foreground mb-4">
+                          <CardContent className="flex-grow pb-2">
+                            <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
                               {video.description || "No description provided"}
                             </p>
-                            <div className="text-sm">
+                            <div className="text-xs">
                               <div className="font-medium">Video URL:</div>
-                              <div className="text-muted-foreground break-all">{video.video_url}</div>
+                              <div className="text-muted-foreground break-all truncate">{video.video_url}</div>
                             </div>
-                            {video.thumbnail_url && (
-                              <div className="text-sm mt-2">
-                                <div className="font-medium">Thumbnail:</div>
-                                <div className="text-muted-foreground break-all">{video.thumbnail_url}</div>
-                              </div>
-                            )}
                           </CardContent>
-                          <CardFooter className="flex justify-end space-x-2">
+                          <CardFooter className="pt-2 flex justify-end space-x-2">
                             <Button 
                               variant="destructive" 
                               size="sm"
