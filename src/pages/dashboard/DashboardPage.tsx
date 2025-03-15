@@ -1,6 +1,7 @@
+
 import { Header } from "@/components/ui/Header";
 import { SideNav } from "@/components/ui/dashboard/SideNav";
-import { SalespersonDashboard } from "./SalespersonDashboard";
+import SalespersonDashboard from "./SalespersonDashboard";
 
 export default function DashboardPage() {
   return (

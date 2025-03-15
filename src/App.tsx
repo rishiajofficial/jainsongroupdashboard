@@ -1,30 +1,49 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import TrainingVideos from '@/pages/TrainingVideos';
-import TrainingVideo from '@/pages/TrainingVideo';
-import TrainingManage from '@/pages/TrainingManage';
-import TrainingPerformance from '@/pages/TrainingPerformance';
-import Login from '@/pages/Login';
-import Signup from '@/pages/Signup';
-import AdminApprovals from '@/pages/AdminApprovals';
-import AdminUsers from '@/pages/AdminUsers';
-import AdminDashboardSettings from '@/pages/AdminDashboardSettings';
-import AdminPageAccess from '@/pages/AdminPageAccess';
-import Jobs from '@/pages/Jobs';
-import JobsManage from '@/pages/JobsManage';
-import Applications from '@/pages/Applications';
-import ApplicationsReview from '@/pages/ApplicationsReview';
-import JobApplicationPage from '@/pages/JobApplicationPage';
-import DashboardPage from '@/pages/DashboardPage';
-import SalespersonDashboard from '@/pages/SalespersonDashboard';
-import UserProfile from '@/pages/UserProfile';
-import Settings from '@/pages/Settings';
+
+// Pages organized by directory
+// Training pages
+import TrainingVideos from '@/pages/training/TrainingVideos';
+import TrainingVideo from '@/pages/training/TrainingVideo';
+import TrainingManage from '@/pages/training/TrainingManage';
+import TrainingPerformance from '@/pages/training/TrainingPerformance';
+
+// Auth pages
+import Login from '@/pages/auth/Login';
+import Signup from '@/pages/auth/Signup';
+
+// Admin pages
+import AdminApprovals from '@/pages/admin/AdminApprovals';
+import AdminUsers from '@/pages/admin/AdminUsers';
+import AdminDashboardSettings from '@/pages/admin/AdminDashboardSettings';
+import AdminPageAccess from '@/pages/admin/AdminPageAccess';
+
+// Jobs pages
+import Jobs from '@/pages/jobs/Jobs';
+import JobsManage from '@/pages/jobs/JobsManage';
+
+// Applications pages
+import Applications from '@/pages/applications/Applications';
+import ApplicationsReview from '@/pages/applications/ApplicationsReview';
+import JobApplicationPage from '@/pages/applications/JobApplicationPage';
+
+// Dashboard pages
+import DashboardPage from '@/pages/dashboard/DashboardPage';
+import SalespersonDashboard from '@/pages/dashboard/SalespersonDashboard';
+
+// Profile pages
+import UserProfile from '@/pages/profile/UserProfile';
+import Settings from '@/pages/profile/Settings';
+
+// Import landing page
+import Index from '@/pages/Index';
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<DashboardPage />} />
+        <Route path="/" element={<Index />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/salesperson-dashboard" element={<SalespersonDashboard />} />
         
