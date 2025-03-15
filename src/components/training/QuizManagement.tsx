@@ -32,14 +32,15 @@ export const QuizManagement = ({ onEditQuiz }: QuizManagementProps) => {
         const { data, error } = await supabase
           .from('training_videos')
           .select('*, training_quiz_questions(count)')
-          .order('order_number', { ascending: true })
+          // Removed order_number from the sort
           .order('created_at', { ascending: false });
 
         if (error) throw error;
         
         // Format data to include question count
-        const videosWithQuestionCount = data?.map(video => ({
+        const videosWithQuestionCount = data?.map((video, index) => ({
           ...video,
+          serialNumber: index + 1, // Add a serial number for display
           question_count: video.training_quiz_questions?.[0]?.count || 0
         })) || [];
         
@@ -115,7 +116,7 @@ export const QuizManagement = ({ onEditQuiz }: QuizManagementProps) => {
                 {videos.map((video, index) => (
                   <TableRow key={video.id}>
                     <TableCell className="font-medium">
-                      {video.order_number || index + 1}
+                      {video.serialNumber || index + 1}
                     </TableCell>
                     <TableCell>{video.title}</TableCell>
                     <TableCell>

@@ -29,7 +29,7 @@ export const useTrainingManager = () => {
         }
       }
       
-      // Fetch training videos
+      // Fetch training videos - removed order_number from the query
       const { data: videosData, error: videosError } = await supabase
         .from('training_videos')
         .select('*')

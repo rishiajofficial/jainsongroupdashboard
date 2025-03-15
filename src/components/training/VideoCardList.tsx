@@ -204,6 +204,7 @@ export const VideoCardList = ({ videos, loading, onRefresh, onEditQuiz }: VideoC
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>No.</TableHead>
               <TableHead>Title</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Description</TableHead>
@@ -212,8 +213,9 @@ export const VideoCardList = ({ videos, loading, onRefresh, onEditQuiz }: VideoC
             </TableRow>
           </TableHeader>
           <TableBody>
-            {videos.map((video) => (
+            {videos.map((video, index) => (
               <TableRow key={video.id}>
+                <TableCell className="font-medium">{index + 1}</TableCell>
                 <TableCell className="font-medium">{video.title}</TableCell>
                 <TableCell>
                   <Badge variant="outline">{video.category || "Uncategorized"}</Badge>
