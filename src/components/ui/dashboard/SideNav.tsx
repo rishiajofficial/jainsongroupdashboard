@@ -37,6 +37,7 @@ const navigationItems = {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { href: "/applications/review", label: "Review Candidates", icon: UserCheck },
     { href: "/jobs/manage", label: "Manage Jobs", icon: Briefcase },
+    { href: "/training", label: "Training Videos", icon: GraduationCap },
     { href: "/training/manage", label: "Manage Training", icon: GraduationCap },
     { href: "/training/performance", label: "Training Performance", icon: ClipboardCheck },
     { href: "/profile", label: "My Profile", icon: Users },
@@ -47,6 +48,7 @@ const navigationItems = {
     { href: "/admin/approvals", label: "Manager Approvals", icon: UserCheck },
     { href: "/admin/page-access", label: "Page Access", icon: FileText },
     { href: "/admin/dashboard-settings", label: "Dashboard Settings", icon: Settings2 },
+    { href: "/training", label: "Training Videos", icon: GraduationCap },
     { href: "/profile", label: "My Profile", icon: Users },
   ]
 };
@@ -63,15 +65,9 @@ export function SideNav({ role }: SideNavProps) {
   
   // Update visible items when role changes and check visibility
   useEffect(() => {
-    // For admin role, show all items by default
-    if (role === 'admin') {
-      setVisibleItems(defaultItems);
-      return;
-    }
-    
     // Filter items based on page access rules
     const filteredItems = defaultItems.filter(item => {
-      // Dashboard is always visible
+      // Dashboard and profile are always visible
       if (item.href === '/dashboard' || item.href === '/profile') {
         return true;
       }

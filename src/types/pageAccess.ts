@@ -29,7 +29,7 @@ export const CONFIGURABLE_PAGES: PageConfig[] = [
   
   // Salesperson Pages
   { path: "/salesperson-stats", name: "Salesperson Stats", description: "View sales performance metrics", defaultRoles: ['salesperson', 'manager'] },
-  { path: "/training", name: "Training Videos", description: "Access training materials", defaultRoles: ['salesperson', 'manager'] },
+  { path: "/training", name: "Training Videos", description: "Access training materials", defaultRoles: ['salesperson', 'manager', 'admin'] },
   
   // Manager Pages
   { path: "/jobs/manage", name: "Manage Jobs", description: "Create and manage job listings", defaultRoles: ['manager'] },

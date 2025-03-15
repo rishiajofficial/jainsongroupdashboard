@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/ui/Header";
 import { SideNav } from "@/components/ui/dashboard/SideNav";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { GraduationCap, CheckCircle, Video, Play } from "lucide-react";
+import { GraduationCap, CheckCircle, Video, Play, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function TrainingVideos() {
@@ -18,6 +18,7 @@ export default function TrainingVideos() {
   const [userProgress, setUserProgress] = useState<Record<string, any>>({});
   const { toast } = useToast();
   const navigate = useNavigate();
+  const videoRefs = useRef<Record<string, HTMLVideoElement>>({});
 
   useEffect(() => {
     async function fetchData() {
@@ -107,6 +108,14 @@ export default function TrainingVideos() {
       );
     }
     
+    if (progress.quiz_completed) {
+      return (
+        <Badge variant="secondary">
+          <Clock className="h-3 w-3 mr-1" /> Quiz Completed
+        </Badge>
+      );
+    }
+    
     return <Badge variant="secondary">In Progress</Badge>;
   };
   
@@ -114,6 +123,64 @@ export default function TrainingVideos() {
     const progress = userProgress[videoId];
     if (!progress) return 0;
     return progress.quiz_completed ? 100 : (progress.watched_percentage || 0);
+  };
+
+  const handleVideoLoad = (videoId: string) => {
+    const videoRef = videoRefs.current[videoId];
+    if (videoRef) {
+      // Create canvas for thumbnail
+      const canvas = document.createElement('canvas');
+      canvas.width = 320;
+      canvas.height = 180;
+      const ctx = canvas.getContext('2d');
+      
+      // Set the current time to 1 second (to get a frame)
+      videoRef.currentTime = 1;
+      
+      // When time updates, capture the frame
+      videoRef.addEventListener('timeupdate', function onTimeUpdate() {
+        if (ctx) {
+          ctx.drawImage(videoRef, 0, 0, canvas.width, canvas.height);
+          const thumbnailUrl = canvas.toDataURL('image/jpeg');
+          
+          // Update the video element's poster
+          videoRef.poster = thumbnailUrl;
+          
+          // Remove listener after first capture
+          videoRef.removeEventListener('timeupdate', onTimeUpdate);
+        }
+      }, { once: true });
+    }
+  };
+
+  const getQuizStatus = (video: any) => {
+    if (!video.has_quiz) return null;
+    
+    const progress = userProgress[video.id];
+    if (!progress) return null;
+    
+    if (progress.quiz_completed) {
+      return (
+        <div className="text-xs text-green-500 mt-1 flex items-center">
+          <CheckCircle className="h-3 w-3 mr-1" />
+          Quiz completed with score: {progress.quiz_score}%
+        </div>
+      );
+    }
+    
+    if (progress.watched_percentage >= 90) {
+      return (
+        <div className="text-xs text-blue-500 mt-1">
+          Quiz available after watching
+        </div>
+      );
+    }
+    
+    return (
+      <div className="text-xs text-muted-foreground mt-1">
+        Complete the video to unlock quiz
+      </div>
+    );
   };
 
   return (
@@ -168,6 +235,23 @@ export default function TrainingVideos() {
                           alt={video.title} 
                           className="w-full h-full object-cover"
                         />
+                      ) : video.video_url ? (
+                        <>
+                          <video 
+                            ref={el => {
+                              if (el) videoRefs.current[video.id] = el;
+                            }}
+                            src={video.video_url}
+                            className="w-full h-full object-cover hidden"
+                            onLoadedData={() => handleVideoLoad(video.id)}
+                            muted
+                            preload="metadata"
+                            controls={false}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                            <Video className="h-12 w-12 text-white/70" />
+                          </div>
+                        </>
                       ) : (
                         <Video className="h-12 w-12 text-muted-foreground" />
                       )}
@@ -189,6 +273,13 @@ export default function TrainingVideos() {
                       </div>
                       <CardDescription>
                         {video.description?.substring(0, 100)}{video.description?.length > 100 ? '...' : ''}
+                        {video.has_quiz && (
+                          <div className="mt-1 text-xs inline-flex items-center text-primary">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Includes quiz assessment
+                          </div>
+                        )}
+                        {getQuizStatus(video)}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>

@@ -104,13 +104,15 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
       if (updates.is_enabled !== undefined) {
         const rule = accessRules.find(r => r.id === ruleId);
         const action = updates.is_enabled ? 'enabled' : 'disabled';
-        toast.success(`${rule?.page_name} page ${action}. Navigation will be updated.`);
+        const pageLabel = rule?.page_name || 'Page';
+        toast.success(`${pageLabel} ${action}. This page will ${updates.is_enabled ? 'now appear' : 'no longer appear'} in navigation.`);
       } else if (updates.allowed_roles !== undefined) {
         const rule = accessRules.find(r => r.id === ruleId);
-        const roleChanges = updates.allowed_roles.length > 0 
-          ? `Updated roles with access to ${rule?.page_name}` 
-          : `Removed all role access from ${rule?.page_name}`;
-        toast.success(roleChanges);
+        const pageLabel = rule?.page_name || 'Page';
+        const rolesDisplay = updates.allowed_roles.length > 0 
+          ? updates.allowed_roles.join(', ') 
+          : 'no roles';
+        toast.success(`Access updated: ${pageLabel} is now visible to ${rolesDisplay}`);
       } else {
         toast.success('Page access rule updated successfully');
       }
@@ -153,7 +155,10 @@ export function PageAccessProvider({ children }: { children: ReactNode }) {
       }
       
       await fetchRules();
-      toast.success(`${enabled ? 'Enabled' : 'Disabled'} all pages for ${role} role. Navigation will update accordingly.`);
+      const message = enabled 
+        ? `${role} users will now see all relevant pages in their navigation` 
+        : `${role} users will no longer see these pages in their navigation`;
+      toast.success(message);
     } catch (error) {
       console.error('Error bulk updating access rules:', error);
       toast.error('Failed to update multiple page access settings');
