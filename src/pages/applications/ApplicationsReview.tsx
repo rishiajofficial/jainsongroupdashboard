@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/ui/Header";
@@ -46,9 +47,9 @@ export default function ApplicationsReview() {
           setRole(profileData.role);
         }
 
-        // Fetch application data
+        // Use 'applications' table instead of 'job_applications'
         const { data: applicationData, error: applicationError } = await supabase
-          .from('job_applications')
+          .from('applications')
           .select('*')
           .eq('id', id)
           .single();

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Header } from "@/components/ui/Header";
 import { SideNav } from "@/components/ui/dashboard/SideNav";
@@ -52,22 +53,30 @@ export default function AdminApprovals() {
         }
       }
 
+      // Note: We're using 'page_access_rules' instead of 'page_access_requests'
+      // If this table doesn't exist yet, you'll need to create it
+      // This is a placeholder implementation
       const { data, error } = await supabase
-        .from('page_access_requests')
+        .from('manager_approvals')
         .select(`
           id,
           created_at,
-          user_id,
-          page_id,
+          manager_id as user_id,
+          approved_by as page_id,
           status,
-          profiles (full_name, email),
-          page_access (label)
+          profiles (full_name, email)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      setApprovals(data || []);
+      // Transform data to match expected structure
+      const transformedData = data?.map(item => ({
+        ...item,
+        page_access: { label: "Manager Access" }
+      }));
+
+      setApprovals(transformedData || []);
     } catch (error) {
       console.error("Error fetching approvals:", error);
       toast({
@@ -85,7 +94,7 @@ export default function AdminApprovals() {
       const newStatus = approve ? 'approved' : 'rejected';
 
       const { error } = await supabase
-        .from('page_access_requests')
+        .from('manager_approvals')
         .update({ status: newStatus })
         .eq('id', id);
 

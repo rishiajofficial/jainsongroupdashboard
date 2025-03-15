@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -52,9 +53,10 @@ export default function JobApplicationPage() {
       try {
         setIsLoading(true);
 
-        // Fetch application data
+        // Since 'job_applications' doesn't exist in the database schema,
+        // we'll use 'applications' instead
         const { data: applicationData, error: applicationError } = await supabase
-          .from('job_applications')
+          .from('applications')
           .select('*')
           .eq('id', id)
           .single();
@@ -62,23 +64,49 @@ export default function JobApplicationPage() {
         if (applicationError) throw applicationError;
 
         if (applicationData) {
-          setApplication(applicationData);
-          setName(applicationData.name);
-          setEmail(applicationData.email);
-          setPhone(applicationData.phone);
-          setCoverLetter(applicationData.cover_letter || '');
+          // Transform the data to match our expected format
+          const transformedApp: JobApplication = {
+            id: applicationData.id,
+            created_at: applicationData.created_at,
+            job_id: applicationData.job_id,
+            user_id: applicationData.candidate_id,
+            name: applicationData.name || '',
+            email: applicationData.email || '',
+            phone: applicationData.phone || '',
+            resume_url: applicationData.resume_url,
+            cover_letter: applicationData.cover_letter,
+            status: applicationData.status as any
+          };
+          
+          setApplication(transformedApp);
+          setName(transformedApp.name);
+          setEmail(transformedApp.email);
+          setPhone(transformedApp.phone);
+          setCoverLetter(transformedApp.cover_letter || '');
 
           // Fetch job data
           const { data: jobData, error: jobError } = await supabase
             .from('jobs')
             .select('*')
-            .eq('id', applicationData.job_id)
+            .eq('id', transformedApp.job_id)
             .single();
 
           if (jobError) throw jobError;
 
           if (jobData) {
-            setJob(jobData);
+            // Create the job object with the right properties
+            const transformedJob: Job = {
+              id: jobData.id,
+              created_at: jobData.created_at,
+              title: jobData.title,
+              description: jobData.description,
+              company: jobData.company || '',
+              location: jobData.location || '',
+              salary: jobData.salary_range,
+              requirements: jobData.requirements
+            };
+            
+            setJob(transformedJob);
           }
         }
       } catch (error) {
@@ -105,7 +133,7 @@ export default function JobApplicationPage() {
       setIsLoading(true);
 
       const { error } = await supabase
-        .from('job_applications')
+        .from('applications')
         .update({
           name: name,
           email: email,
