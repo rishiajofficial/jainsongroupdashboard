@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileQuestion } from "lucide-react";
+import { FileQuestion, Edit, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ export const QuizManagement = () => {
   const [videos, setVideos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [selectedVideoTitle, setSelectedVideoTitle] = useState<string>("");
   const [showQuizForm, setShowQuizForm] = useState(false);
   const [existingQuestions, setExistingQuestions] = useState<any[]>([]);
   const { toast } = useToast();
@@ -83,8 +84,9 @@ export const QuizManagement = () => {
     }
   };
 
-  const handleAddOrEditQuiz = async (videoId: string) => {
+  const handleAddOrEditQuiz = async (videoId: string, videoTitle: string) => {
     setSelectedVideo(videoId);
+    setSelectedVideoTitle(videoTitle);
     
     // For existing quizzes, load the questions first
     const videoWithQuiz = videos.find(v => v.id === videoId && v.has_quiz);
@@ -100,6 +102,7 @@ export const QuizManagement = () => {
   const handleQuizFormComplete = () => {
     setShowQuizForm(false);
     setSelectedVideo(null);
+    setSelectedVideoTitle("");
     setExistingQuestions([]);
     
     // Refresh the video list to update has_quiz status
@@ -127,6 +130,26 @@ export const QuizManagement = () => {
   if (showQuizForm && selectedVideo) {
     return (
       <div className="space-y-4">
+        <div className="flex items-center mb-4">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => {
+              setShowQuizForm(false);
+              setSelectedVideo(null);
+              setSelectedVideoTitle("");
+              setExistingQuestions([]);
+            }}
+            className="mr-2"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Videos
+          </Button>
+          <h2 className="text-xl font-semibold">
+            {existingQuestions.length > 0 ? "Edit Quiz" : "Create Quiz"}: {selectedVideoTitle}
+          </h2>
+        </div>
+        
         <QuizForm 
           videoId={selectedVideo} 
           existingQuestions={existingQuestions}
@@ -134,6 +157,7 @@ export const QuizManagement = () => {
           onCancel={() => {
             setShowQuizForm(false);
             setSelectedVideo(null);
+            setSelectedVideoTitle("");
             setExistingQuestions([]);
           }}
         />
@@ -191,9 +215,9 @@ export const QuizManagement = () => {
                 <Button 
                   variant={video.has_quiz ? "outline" : "default"}
                   size="sm"
-                  onClick={() => handleAddOrEditQuiz(video.id)}
+                  onClick={() => handleAddOrEditQuiz(video.id, video.title)}
                 >
-                  <FileQuestion className="h-4 w-4 mr-2" />
+                  <Edit className="h-4 w-4 mr-2" />
                   {video.has_quiz ? "Edit Quiz" : "Add Quiz"}
                 </Button>
               </div>

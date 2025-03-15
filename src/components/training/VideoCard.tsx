@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,13 +19,12 @@ export const VideoCard = ({ video }: VideoCardProps) => {
   };
   
   const handleGoToQuiz = () => {
-    navigate(`/training/video/${video.id}?tab=quiz`);
+    navigate(`/training/video/${video.id}?quiz=true`);
   };
 
   const getThumbnail = () => {
     if (video.thumbnail_url) return video.thumbnail_url;
     
-    // Extract video ID for YouTube videos
     if (video.video_url?.includes('youtube.com') || video.video_url?.includes('youtu.be')) {
       let videoId = '';
       
