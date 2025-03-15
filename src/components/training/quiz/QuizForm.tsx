@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,6 +12,7 @@ interface QuizFormProps {
   videoId: string;
   existingQuestions?: {
     question: string;
+    quiz_number?: number;
     options: {
       option_text: string;
       is_correct: boolean;
@@ -24,6 +24,7 @@ interface QuizFormProps {
 
 interface QuizQuestion {
   question: string;
+  quiz_number?: number;
   options: {
     option_text: string;
     is_correct: boolean;
@@ -32,8 +33,9 @@ interface QuizQuestion {
 
 export function QuizForm({ videoId, existingQuestions = [], onComplete, onCancel }: QuizFormProps) {
   const [questions, setQuestions] = useState<QuizQuestion[]>([
-    { question: "", options: [{ option_text: "", is_correct: false }] }
+    { question: "", quiz_number: undefined, options: [{ option_text: "", is_correct: false }] }
   ]);
+  const [quizNumber, setQuizNumber] = useState<number | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   
@@ -41,12 +43,17 @@ export function QuizForm({ videoId, existingQuestions = [], onComplete, onCancel
   useEffect(() => {
     if (existingQuestions && existingQuestions.length > 0) {
       setQuestions(existingQuestions);
+      // Use the quiz_number from the first question if available
+      if (existingQuestions[0]?.quiz_number) {
+        setQuizNumber(existingQuestions[0].quiz_number);
+      }
     }
   }, [existingQuestions]);
 
   const handleAddQuestion = () => {
     setQuestions([...questions, { 
       question: "", 
+      quiz_number: undefined, 
       options: [{ option_text: "", is_correct: false }] 
     }]);
   };
@@ -173,7 +180,8 @@ export function QuizForm({ videoId, existingQuestions = [], onComplete, onCancel
           .from('training_quiz_questions')
           .insert({
             video_id: videoId,
-            question: question.question
+            question: question.question,
+            quiz_number: quizNumber
           })
           .select()
           .single();
@@ -233,6 +241,26 @@ export function QuizForm({ videoId, existingQuestions = [], onComplete, onCancel
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <label htmlFor="quizNumber" className="text-sm font-medium leading-none">
+              Quiz Number (Optional)
+            </label>
+            <Input
+              id="quizNumber"
+              type="number"
+              value={quizNumber !== undefined ? quizNumber : ''}
+              onChange={(e) => {
+                const value = e.target.value !== '' ? parseInt(e.target.value) : undefined;
+                setQuizNumber(value);
+              }}
+              className="max-w-xs"
+              placeholder="Enter quiz number for sorting"
+            />
+            <p className="text-xs text-muted-foreground">
+              The quiz number is used for ordering quizzes in the learning path
+            </p>
+          </div>
+          
           {questions.map((question, questionIndex) => (
             <div key={questionIndex} className="p-4 border rounded-md space-y-4">
               <div className="flex items-center justify-between">

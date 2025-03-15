@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Video, FileQuestion, ToggleLeft, ToggleRight, Pencil } from "lucide-react";
@@ -44,6 +43,7 @@ export const VideoCardList = ({ videos, loading, onRefresh, onEditQuiz }: VideoC
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editCategory, setEditCategory] = useState("");
+  const [editOrderNumber, setEditOrderNumber] = useState<number | undefined>(undefined);
 
   const handleDeleteVideo = async (id: string) => {
     if (!confirm("Are you sure you want to delete this video? This action cannot be undone.")) {
@@ -143,6 +143,7 @@ export const VideoCardList = ({ videos, loading, onRefresh, onEditQuiz }: VideoC
     setEditTitle(video.title);
     setEditDescription(video.description || "");
     setEditCategory(video.category || "General");
+    setEditOrderNumber(video.order_number);
     setIsEditing(true);
   };
 
@@ -155,7 +156,8 @@ export const VideoCardList = ({ videos, loading, onRefresh, onEditQuiz }: VideoC
         .update({
           title: editTitle,
           description: editDescription,
-          category: editCategory
+          category: editCategory,
+          order_number: editOrderNumber
         })
         .eq('id', selectedVideo.id);
         
@@ -213,9 +215,9 @@ export const VideoCardList = ({ videos, loading, onRefresh, onEditQuiz }: VideoC
             </TableRow>
           </TableHeader>
           <TableBody>
-            {videos.map((video, index) => (
+            {videos.map((video) => (
               <TableRow key={video.id}>
-                <TableCell className="font-medium">{index + 1}</TableCell>
+                <TableCell className="font-medium">{video.order_number || '-'}</TableCell>
                 <TableCell className="font-medium">{video.title}</TableCell>
                 <TableCell>
                   <Badge variant="outline">{video.category || "Uncategorized"}</Badge>
@@ -301,20 +303,35 @@ export const VideoCardList = ({ videos, loading, onRefresh, onEditQuiz }: VideoC
                 placeholder="Enter video title"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select value={editCategory} onValueChange={setEditCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TRAINING_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Select value={editCategory} onValueChange={setEditCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TRAINING_CATEGORIES.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="orderNumber">Order Number</Label>
+                <Input
+                  id="orderNumber"
+                  type="number"
+                  value={editOrderNumber !== undefined ? editOrderNumber : ''}
+                  onChange={(e) => {
+                    const value = e.target.value !== '' ? parseInt(e.target.value) : undefined;
+                    setEditOrderNumber(value);
+                  }}
+                  placeholder="Enter order number"
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>

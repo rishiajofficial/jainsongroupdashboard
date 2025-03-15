@@ -1,3 +1,6 @@
+
+// Only updating the necessary parts of the form to add order_number field
+
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +35,7 @@ export function TrainingVideoForm({ onComplete }: TrainingVideoFormProps) {
   const [videoUrl, setVideoUrl] = useState("");
   const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [category, setCategory] = useState("General");
+  const [orderNumber, setOrderNumber] = useState<number | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadMethod, setUploadMethod] = useState<"url" | "file">("url");
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -170,7 +174,8 @@ export function TrainingVideoForm({ onComplete }: TrainingVideoFormProps) {
           video_url: finalVideoUrl,
           thumbnail_url: finalThumbnailUrl || null,
           created_by: sessionData.session.user.id,
-          category
+          category,
+          order_number: orderNumber
         })
         .select()
         .single();
@@ -214,20 +219,36 @@ export function TrainingVideoForm({ onComplete }: TrainingVideoFormProps) {
             />
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {TRAINING_CATEGORIES.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TRAINING_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="orderNumber">Order Number (Optional)</Label>
+              <Input
+                id="orderNumber"
+                type="number"
+                value={orderNumber !== undefined ? orderNumber : ''}
+                onChange={(e) => {
+                  const value = e.target.value !== '' ? parseInt(e.target.value) : undefined;
+                  setOrderNumber(value);
+                }}
+                placeholder="Enter order number for sorting"
+              />
+            </div>
           </div>
           
           <div className="space-y-2">

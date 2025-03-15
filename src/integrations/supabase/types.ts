@@ -638,18 +638,21 @@ export type Database = {
           created_at: string
           id: string
           question: string
+          quiz_number: number | null
           video_id: string
         }
         Insert: {
           created_at?: string
           id?: string
           question: string
+          quiz_number?: number | null
           video_id: string
         }
         Update: {
           created_at?: string
           id?: string
           question?: string
+          quiz_number?: number | null
           video_id?: string
         }
         Relationships: [
@@ -743,6 +746,7 @@ export type Database = {
           description: string | null
           has_quiz: boolean | null
           id: string
+          order_number: number | null
           thumbnail_url: string | null
           title: string
           video_url: string
@@ -754,6 +758,7 @@ export type Database = {
           description?: string | null
           has_quiz?: boolean | null
           id?: string
+          order_number?: number | null
           thumbnail_url?: string | null
           title: string
           video_url: string
@@ -765,6 +770,7 @@ export type Database = {
           description?: string | null
           has_quiz?: boolean | null
           id?: string
+          order_number?: number | null
           thumbnail_url?: string | null
           title?: string
           video_url?: string

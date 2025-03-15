@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { FileQuestion, Edit, ArrowLeft, Video, Pencil, FileText } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,15 +31,14 @@ export const QuizManagement = ({ onEditQuiz }: QuizManagementProps) => {
         const { data, error } = await supabase
           .from('training_videos')
           .select('*, training_quiz_questions(count)')
-          // Removed order_number from the sort
+          .order('order_number', { ascending: true, nullsLast: true })
           .order('created_at', { ascending: false });
 
         if (error) throw error;
         
         // Format data to include question count
-        const videosWithQuestionCount = data?.map((video, index) => ({
+        const videosWithQuestionCount = data?.map(video => ({
           ...video,
-          serialNumber: index + 1, // Add a serial number for display
           question_count: video.training_quiz_questions?.[0]?.count || 0
         })) || [];
         
@@ -113,10 +111,10 @@ export const QuizManagement = ({ onEditQuiz }: QuizManagementProps) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {videos.map((video, index) => (
+                {videos.map((video) => (
                   <TableRow key={video.id}>
                     <TableCell className="font-medium">
-                      {video.serialNumber || index + 1}
+                      {video.order_number || '-'}
                     </TableCell>
                     <TableCell>{video.title}</TableCell>
                     <TableCell>
