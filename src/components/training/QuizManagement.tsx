@@ -31,7 +31,7 @@ export const QuizManagement = ({ onEditQuiz }: QuizManagementProps) => {
         const { data, error } = await supabase
           .from('training_videos')
           .select('*, training_quiz_questions(count)')
-          .order('order_number', { ascending: true, nullsLast: true })
+          .order('order_number', { ascending: true, nullsFirst: false })
           .order('created_at', { ascending: false });
 
         if (error) throw error;

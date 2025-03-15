@@ -57,11 +57,11 @@ export const useTrainingVideos = () => {
         setRole(profileData.role);
       }
       
-      // Fetch videos - now using order_number for sorting
+      // Fetch videos - now using order_number with fixed nullsFirst property
       const { data: videosData, error: videosError } = await supabase
         .from('training_videos')
         .select('*')
-        .order('order_number', { ascending: true, nullsLast: true })
+        .order('order_number', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: false });
         
       if (videosError) throw videosError;
