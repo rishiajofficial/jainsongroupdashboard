@@ -68,6 +68,12 @@ export function SchemaSwitcher({ userRole }: SchemaSwitcherProps) {
         >
           Development (dev)
         </DropdownMenuItem>
+        <DropdownMenuItem 
+          className={currentSchema === 'dev2' ? 'bg-muted' : ''} 
+          onClick={() => handleSchemaChange('dev2')}
+        >
+          Development 2 (dev2)
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

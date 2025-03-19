@@ -4,7 +4,7 @@
  */
 
 // Schema options
-export type SchemaType = 'public' | 'dev';
+export type SchemaType = 'public' | 'dev' | 'dev2';
 
 const SCHEMA_KEY = 'current_schema';
 
