@@ -42,6 +42,9 @@ export const setCurrentSchema = (schema: SchemaType): void => {
   }
   
   try {
+    // Clear any existing schema errors first
+    localStorage.removeItem('schema_access_error');
+    
     // Store the current schema
     localStorage.setItem(SCHEMA_KEY, schema);
     

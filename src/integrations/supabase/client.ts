@@ -13,7 +13,9 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Get the current schema from local storage
 const schema = getCurrentSchema();
 
-// Only use schemas that are known to exist
+// The schema property in the Supabase configuration must be 'public', but we can use
+// headers to request a specific schema for the PostgreSQL REST API
+// This is a workaround for the limitation that 'db.schema' can only be set to 'public'
 const safeSchema = ['public', 'dev', 'dev2'].includes(schema) ? schema : 'public';
 
 // Log schema info for debugging
@@ -25,11 +27,13 @@ export const supabase = createClient<Database>(
   SUPABASE_PUBLISHABLE_KEY,
   {
     db: {
-      schema: safeSchema
+      schema: 'public' // Must be 'public' for the client to work properly
     },
     global: {
       headers: {
-        'x-schema-name': safeSchema
+        // Use PostgreSQL's ability to set the search_path for a session
+        'x-schema-name': safeSchema,
+        'X-Postgres-Features': 'multiSchema'
       }
     },
     auth: {
@@ -42,10 +46,10 @@ export const supabase = createClient<Database>(
 
 // Add some error detection on the client
 supabase.from('profiles').select('id').limit(1).then(({ error }) => {
-  if (error && error.code === 'PGRST106') {
+  if (error) {
     console.error("Schema access error detected on client initialization:", error);
     
-    // If we're not on public schema and there's a schema error, record the issue
+    // If there's a schema error, record the issue
     if (schema !== 'public') {
       localStorage.setItem('schema_access_error', 'true');
       console.log('Schema access error has been recorded in localStorage');
