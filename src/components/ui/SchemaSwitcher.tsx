@@ -9,13 +9,14 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
-import { Database, AlertTriangle, ShieldAlert } from "lucide-react";
+import { Database, AlertTriangle, ShieldAlert, CheckCircle } from "lucide-react";
 import { 
   getCurrentSchema, 
   setCurrentSchema, 
   SchemaType, 
   canSwitchSchema,
-  forceResetToPublicSchema
+  forceResetToPublicSchema,
+  verifySchemaAccess
 } from "@/utils/schemaUtils";
 import { UserRole } from "@/pages/DashboardPage";
 import { useToast } from "@/components/ui/use-toast";
@@ -28,26 +29,48 @@ interface SchemaSwitcherProps {
 export function SchemaSwitcher({ userRole }: SchemaSwitcherProps) {
   const [currentSchema, setSchema] = useState<SchemaType>(getCurrentSchema());
   const [previousErrors, setPreviousErrors] = useState<boolean>(false);
+  const [isCheckingSchema, setIsCheckingSchema] = useState(false);
   const { toast } = useToast();
   
-  // Update state when schema changes
+  // Update state when schema changes and check for errors
   useEffect(() => {
-    setSchema(getCurrentSchema());
+    const updateSchemaStatus = async () => {
+      const schema = getCurrentSchema();
+      setSchema(schema);
+      
+      // Check for previous schema errors
+      const hasSchemaError = localStorage.getItem('schema_access_error') === 'true';
+      setPreviousErrors(hasSchemaError);
+      
+      // Check for schema reset
+      const resetPerformed = localStorage.getItem('schema_reset_performed') === 'true';
+      if (resetPerformed) {
+        // Clear the flag so it only shows once
+        localStorage.removeItem('schema_reset_performed');
+        toast({
+          title: "Schema Reset Successful",
+          description: "You're now using the public schema",
+        });
+      }
+
+      // Verify schema access in the background
+      if (schema !== 'public') {
+        setIsCheckingSchema(true);
+        const accessible = await verifySchemaAccess();
+        setIsCheckingSchema(false);
+        
+        if (!accessible && schema !== 'public') {
+          toast({
+            title: "Schema Connection Issue",
+            description: `Cannot access ${schema} schema. You may need to reset to public schema.`,
+            variant: "destructive"
+          });
+          setPreviousErrors(true);
+        }
+      }
+    };
     
-    // Check for previous schema errors
-    const hasSchemaError = localStorage.getItem('schema_access_error') === 'true';
-    setPreviousErrors(hasSchemaError);
-    
-    // Check for schema reset
-    const resetPerformed = localStorage.getItem('schema_reset_performed') === 'true';
-    if (resetPerformed) {
-      // Clear the flag so it only shows once
-      localStorage.removeItem('schema_reset_performed');
-      toast({
-        title: "Schema Reset Successful",
-        description: "You're now using the public schema",
-      });
-    }
+    updateSchemaStatus();
   }, [toast]);
   
   // Only show for admins
@@ -57,6 +80,8 @@ export function SchemaSwitcher({ userRole }: SchemaSwitcherProps) {
 
   const handleSchemaChange = async (schema: SchemaType) => {
     if (schema === currentSchema) return;
+    
+    setIsCheckingSchema(true);
     
     // Clear any previous schema error flags
     localStorage.removeItem('schema_access_error');
@@ -68,17 +93,24 @@ export function SchemaSwitcher({ userRole }: SchemaSwitcherProps) {
     
     try {
       // Get the current session to ensure it persists across schema switch
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data } = await supabase.auth.getSession();
       
-      if (session) {
+      if (data.session) {
         // Store user information in localStorage to help maintain state across schema switch
-        localStorage.setItem('schema_switch_user_id', session.user.id);
-        localStorage.setItem('schema_switch_user_role', userRole || 'candidate');
+        localStorage.setItem('schema_switch_user_id', data.session.user.id);
+        
+        // Make sure the user role is valid before storing it
+        const validRole: UserRole = 
+          userRole && ['admin', 'candidate', 'salesperson', 'manager'].includes(userRole) 
+            ? userRole as UserRole 
+            : 'candidate';
+            
+        localStorage.setItem('schema_switch_user_role', validRole);
         
         // Log information about the current session to help with debugging
         console.log("Preserving session during schema switch:", {
-          userId: session.user.id,
-          userRole: userRole
+          userId: data.session.user.id,
+          userRole: validRole
         });
       }
       
@@ -88,10 +120,13 @@ export function SchemaSwitcher({ userRole }: SchemaSwitcherProps) {
       }, 1000);
     } catch (error) {
       console.error("Error preserving session during schema switch:", error);
-      // Continue with schema switch even if session preservation fails
-      setTimeout(() => {
-        setCurrentSchema(schema);
-      }, 1000);
+      setIsCheckingSchema(false);
+      
+      toast({
+        title: "Schema Switch Error",
+        description: "Failed to prepare for schema switch. Try again or reset to public schema.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -110,7 +145,13 @@ export function SchemaSwitcher({ userRole }: SchemaSwitcherProps) {
           <Database className="h-4 w-4" />
           <span className="hidden md:inline">Schema: </span>
           <span className="font-semibold">{currentSchema}</span>
+          {isCheckingSchema && (
+            <span className="animate-pulse">⋯</span>
+          )}
           {previousErrors && <AlertTriangle className="h-4 w-4 ml-1 text-amber-500" />}
+          {!previousErrors && !isCheckingSchema && currentSchema !== 'public' && (
+            <CheckCircle className="h-4 w-4 ml-1 text-green-500" />
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -120,7 +161,7 @@ export function SchemaSwitcher({ userRole }: SchemaSwitcherProps) {
           <>
             <DropdownMenuItem className="text-amber-500 flex items-center gap-2 bg-amber-50">
               <AlertTriangle className="h-4 w-4" />
-              <span>Previous schema errors detected</span>
+              <span>Schema access issues detected</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>

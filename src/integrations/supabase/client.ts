@@ -32,15 +32,10 @@ export const supabase = createClient<Database>(
         'x-schema-name': safeSchema
       }
     },
-    // Add auto schema error detection
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: true,
-      onError: (error) => {
-        console.error("Supabase auth error:", error);
-        // If we get specific schema errors, could reset here
-      }
+      detectSessionInUrl: true
     }
   }
 );
@@ -53,14 +48,11 @@ supabase.from('profiles').select('id').limit(1).then(({ error }) => {
     // If we're not on public schema and there's a schema error, record the issue
     if (schema !== 'public') {
       localStorage.setItem('schema_access_error', 'true');
-      
-      // Optional: automatically reset if initial query fails
-      // We don't do this automatically to avoid unexpected logouts
-      // import("@/utils/schemaUtils").then(({ forceResetToPublicSchema }) => {
-      //   if (confirm("Schema access error detected. Reset to public schema?")) {
-      //     forceResetToPublicSchema();
-      //   }
-      // });
+      console.log('Schema access error has been recorded in localStorage');
     }
+  } else {
+    // Clear any previous schema error if this query succeeds
+    localStorage.removeItem('schema_access_error');
+    console.log('Schema connection validated successfully');
   }
 });

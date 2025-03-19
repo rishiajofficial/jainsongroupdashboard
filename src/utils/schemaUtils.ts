@@ -81,6 +81,7 @@ export const forceResetToPublicSchema = (): void => {
     localStorage.removeItem('schema_switch_return_path');
     localStorage.removeItem('schema_switch_user_id');
     localStorage.removeItem('schema_switch_user_role');
+    localStorage.removeItem('schema_access_error');
     
     // Clear any Supabase session data to force a fresh login
     Object.keys(localStorage).forEach(key => {
@@ -111,6 +112,36 @@ export const forceResetToPublicSchema = (): void => {
   } catch (error) {
     console.error("Error during schema reset:", error);
     alert("Error during schema reset. Please try clearing your browser storage manually and reload the page.");
+  }
+};
+
+/**
+ * Verify schema access by testing a simple query
+ * Returns true if schema is accessible, false otherwise
+ */
+export const verifySchemaAccess = async (): Promise<boolean> => {
+  try {
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    // Try a simple query - just fetch a single row from profiles with limit 1
+    const { error } = await supabase
+      .from('profiles')
+      .select('id')
+      .limit(1);
+    
+    if (error) {
+      console.error("Schema access verification failed:", error);
+      localStorage.setItem('schema_access_error', 'true');
+      return false;
+    }
+    
+    // If no error, schema is accessible
+    localStorage.removeItem('schema_access_error');
+    return true;
+  } catch (error) {
+    console.error("Error during schema access verification:", error);
+    localStorage.setItem('schema_access_error', 'true');
+    return false;
   }
 };
 
@@ -181,33 +212,6 @@ export const addSchemaResetButton = (): void => {
     
     // Add to body
     document.body.appendChild(emergencyButton);
-  }
-};
-
-/**
- * Verify schema access by testing a simple query
- * Returns true if schema is accessible, false otherwise
- */
-export const verifySchemaAccess = async (): Promise<boolean> => {
-  try {
-    const { supabase } = await import('@/integrations/supabase/client');
-    
-    // Try a simple query - just fetch a single row from profiles with limit 1
-    const { error } = await supabase
-      .from('profiles')
-      .select('id')
-      .limit(1);
-    
-    if (error) {
-      console.error("Schema access verification failed:", error);
-      return false;
-    }
-    
-    // If no error, schema is accessible
-    return true;
-  } catch (error) {
-    console.error("Error during schema access verification:", error);
-    return false;
   }
 };
 
