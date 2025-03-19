@@ -6,10 +6,17 @@ import {
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuLabel, 
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
-import { Database } from "lucide-react";
-import { getCurrentSchema, setCurrentSchema, SchemaType, canSwitchSchema } from "@/utils/schemaUtils";
+import { Database, AlertTriangle, ShieldAlert } from "lucide-react";
+import { 
+  getCurrentSchema, 
+  setCurrentSchema, 
+  SchemaType, 
+  canSwitchSchema,
+  forceResetToPublicSchema
+} from "@/utils/schemaUtils";
 import { UserRole } from "@/pages/DashboardPage";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,12 +27,28 @@ interface SchemaSwitcherProps {
 
 export function SchemaSwitcher({ userRole }: SchemaSwitcherProps) {
   const [currentSchema, setSchema] = useState<SchemaType>(getCurrentSchema());
+  const [previousErrors, setPreviousErrors] = useState<boolean>(false);
   const { toast } = useToast();
   
   // Update state when schema changes
   useEffect(() => {
     setSchema(getCurrentSchema());
-  }, []);
+    
+    // Check for previous schema errors
+    const hasSchemaError = localStorage.getItem('schema_access_error') === 'true';
+    setPreviousErrors(hasSchemaError);
+    
+    // Check for schema reset
+    const resetPerformed = localStorage.getItem('schema_reset_performed') === 'true';
+    if (resetPerformed) {
+      // Clear the flag so it only shows once
+      localStorage.removeItem('schema_reset_performed');
+      toast({
+        title: "Schema Reset Successful",
+        description: "You're now using the public schema",
+      });
+    }
+  }, [toast]);
   
   // Only show for admins
   if (!canSwitchSchema(userRole)) {
@@ -34,6 +57,9 @@ export function SchemaSwitcher({ userRole }: SchemaSwitcherProps) {
 
   const handleSchemaChange = async (schema: SchemaType) => {
     if (schema === currentSchema) return;
+    
+    // Clear any previous schema error flags
+    localStorage.removeItem('schema_access_error');
     
     toast({
       title: "Changing Database Schema",
@@ -69,6 +95,14 @@ export function SchemaSwitcher({ userRole }: SchemaSwitcherProps) {
     }
   };
 
+  const handleReset = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent dropdown from closing
+    
+    if (confirm("Reset to public schema? This will clear schema-related data and log you out.")) {
+      forceResetToPublicSchema();
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -76,10 +110,22 @@ export function SchemaSwitcher({ userRole }: SchemaSwitcherProps) {
           <Database className="h-4 w-4" />
           <span className="hidden md:inline">Schema: </span>
           <span className="font-semibold">{currentSchema}</span>
+          {previousErrors && <AlertTriangle className="h-4 w-4 ml-1 text-amber-500" />}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Database Schema</DropdownMenuLabel>
+        
+        {previousErrors && (
+          <>
+            <DropdownMenuItem className="text-amber-500 flex items-center gap-2 bg-amber-50">
+              <AlertTriangle className="h-4 w-4" />
+              <span>Previous schema errors detected</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
+        
         <DropdownMenuItem 
           className={currentSchema === 'public' ? 'bg-muted' : ''} 
           onClick={() => handleSchemaChange('public')}
@@ -97,6 +143,15 @@ export function SchemaSwitcher({ userRole }: SchemaSwitcherProps) {
           onClick={() => handleSchemaChange('dev2')}
         >
           Development 2 (dev2)
+        </DropdownMenuItem>
+        
+        <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          className="text-red-500 flex items-center gap-2"
+          onClick={handleReset}
+        >
+          <ShieldAlert className="h-4 w-4" />
+          <span>Reset to Public Schema</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

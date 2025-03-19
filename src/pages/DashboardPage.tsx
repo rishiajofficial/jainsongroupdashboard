@@ -8,7 +8,11 @@ import { Header } from "@/components/ui/Header";
 import { toast } from "sonner";
 import { DashboardSettingsProvider } from "@/contexts/DashboardSettingsContext";
 import { PageAccessProvider } from "@/contexts/PageAccessContext";
-import { getCurrentSchema, forceResetToPublicSchema } from "@/utils/schemaUtils";
+import { 
+  getCurrentSchema, 
+  forceResetToPublicSchema, 
+  verifySchemaAccess 
+} from "@/utils/schemaUtils";
 
 // This is the canonical UserRole type used throughout the application
 // It matches the user_role enum in the Supabase database
@@ -24,6 +28,17 @@ const DashboardPage = () => {
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
+        
+        // First check if we can access the current schema
+        const schemaAccessible = await verifySchemaAccess();
+        
+        if (!schemaAccessible) {
+          console.error("Schema not accessible, showing error screen");
+          setSchemaError(true);
+          setIsLoading(false);
+          return;
+        }
+        
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session) {

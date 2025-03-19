@@ -13,21 +13,54 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Get the current schema from local storage
 const schema = getCurrentSchema();
 
+// Only use schemas that are known to exist
+const safeSchema = ['public', 'dev', 'dev2'].includes(schema) ? schema : 'public';
+
+// Log schema info for debugging
+console.log(`Initializing Supabase client with schema: ${safeSchema}`);
+
 // Create the Supabase client with the schema configuration
-// We're using 'any' type assertion to allow for dynamic schema switching while maintaining type safety
 export const supabase = createClient<Database>(
   SUPABASE_URL, 
   SUPABASE_PUBLISHABLE_KEY,
   {
     db: {
-      schema: schema as any // Using 'any' to allow dynamic schema switching
+      schema: safeSchema
     },
-    // Set global error handler for type safety issues with schema switching
     global: {
       headers: {
-        // This header helps ensure consistent behavior across schema switches
-        'x-schema-name': schema
+        'x-schema-name': safeSchema
+      }
+    },
+    // Add auto schema error detection
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      onError: (error) => {
+        console.error("Supabase auth error:", error);
+        // If we get specific schema errors, could reset here
       }
     }
   }
 );
+
+// Add some error detection on the client
+supabase.from('profiles').select('id').limit(1).then(({ error }) => {
+  if (error && error.code === 'PGRST106') {
+    console.error("Schema access error detected on client initialization:", error);
+    
+    // If we're not on public schema and there's a schema error, record the issue
+    if (schema !== 'public') {
+      localStorage.setItem('schema_access_error', 'true');
+      
+      // Optional: automatically reset if initial query fails
+      // We don't do this automatically to avoid unexpected logouts
+      // import("@/utils/schemaUtils").then(({ forceResetToPublicSchema }) => {
+      //   if (confirm("Schema access error detected. Reset to public schema?")) {
+      //     forceResetToPublicSchema();
+      //   }
+      // });
+    }
+  }
+});
