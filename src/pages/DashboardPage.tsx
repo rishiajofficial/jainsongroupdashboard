@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,7 +36,12 @@ const DashboardPage = () => {
         const schemaUserRole = localStorage.getItem('schema_switch_user_role');
         if (schemaUserRole) {
           console.log("Using stored user role from schema switch:", schemaUserRole);
-          setUserRole(schemaUserRole as UserRole);
+          // Validate that the stored role is a valid UserRole
+          const validRole = ['admin', 'candidate', 'salesperson', 'manager'].includes(schemaUserRole)
+            ? schemaUserRole as UserRole
+            : 'candidate';
+            
+          setUserRole(validRole);
           
           // Now try to get or create the profile in the new schema
           try {

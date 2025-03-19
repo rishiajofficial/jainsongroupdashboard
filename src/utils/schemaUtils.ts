@@ -59,7 +59,7 @@ export const forceResetToPublicSchema = (): void => {
 };
 
 /**
- * Add a reset button to the page when URL includes special query parameter
+ * Add a small reset button to the page footer
  * This is an emergency mechanism to get back to public schema
  */
 export const addSchemaResetButton = (): void => {
@@ -72,23 +72,27 @@ export const addSchemaResetButton = (): void => {
   // Create reset button
   const resetButton = document.createElement('button');
   resetButton.id = 'schema-reset-button';
-  resetButton.innerText = 'Reset to Public Schema';
+  resetButton.innerText = 'Reset Schema';
   resetButton.style.position = 'fixed';
-  resetButton.style.bottom = '10px';
-  resetButton.style.right = '10px';
+  resetButton.style.bottom = '5px';
+  resetButton.style.right = '5px';
   resetButton.style.zIndex = '9999';
-  resetButton.style.padding = '10px';
-  resetButton.style.backgroundColor = 'red';
-  resetButton.style.color = 'white';
-  resetButton.style.borderRadius = '5px';
+  resetButton.style.padding = '3px 5px';
+  resetButton.style.fontSize = '10px';
+  resetButton.style.backgroundColor = 'transparent';
+  resetButton.style.color = '#666';
+  resetButton.style.border = '1px solid #ddd';
+  resetButton.style.borderRadius = '3px';
   resetButton.style.cursor = 'pointer';
+  resetButton.style.opacity = '0.7';
   
   // Add click handler
   resetButton.addEventListener('click', () => {
-    forceResetToPublicSchema();
+    if (confirm('Reset to public schema? This will clear schema-related data.')) {
+      forceResetToPublicSchema();
+    }
   });
   
   // Add to body
   document.body.appendChild(resetButton);
 };
-
