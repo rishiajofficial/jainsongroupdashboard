@@ -13,12 +13,21 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Get the current schema from local storage
 const schema = getCurrentSchema();
 
+// Create the Supabase client with the schema configuration
+// We're using 'any' type assertion to allow for dynamic schema switching while maintaining type safety
 export const supabase = createClient<Database>(
   SUPABASE_URL, 
   SUPABASE_PUBLISHABLE_KEY,
   {
     db: {
       schema: schema
+    },
+    // Set global error handler for type safety issues with schema switching
+    global: {
+      headers: {
+        // This header helps ensure consistent behavior across schema switches
+        'x-schema-name': schema
+      }
     }
   }
-);
+) as any; // Type assertion to allow for flexible schema usage

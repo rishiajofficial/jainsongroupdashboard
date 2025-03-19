@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -65,12 +66,13 @@ export function AuthForm({ mode }: AuthFormProps) {
           if (userData && userData.user) {
             if (role === "manager") {
               // Create a manager approval request
+              // Using type assertion to fix type issues with schema switching
               const { error: approvalError } = await supabase
                 .from('manager_approvals')
                 .insert({
                   manager_id: userData.user.id,
                   status: 'pending'
-                });
+                } as any);
                 
               if (approvalError) {
                 console.error("Error creating manager approval:", approvalError);

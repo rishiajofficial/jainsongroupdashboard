@@ -21,6 +21,11 @@ export function SchemaSwitcher({ userRole }: SchemaSwitcherProps) {
   const [currentSchema, setSchema] = useState<SchemaType>(getCurrentSchema());
   const { toast } = useToast();
   
+  // Update state when schema changes
+  useEffect(() => {
+    setSchema(getCurrentSchema());
+  }, []);
+  
   // Only show for admins
   if (!canSwitchSchema(userRole)) {
     return null;
