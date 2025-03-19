@@ -159,9 +159,6 @@ export const addSchemaResetButton = (): void => {
   // Check if reset button is already added
   if (document.getElementById('schema-reset-button')) return;
   
-  // Get current schema to determine if emergency button is needed
-  const currentSchema = getCurrentSchema();
-  
   // Create reset button - small and subtle in footer
   const resetButton = document.createElement('button');
   resetButton.id = 'schema-reset-button';
@@ -188,34 +185,6 @@ export const addSchemaResetButton = (): void => {
   
   // Add to body
   document.body.appendChild(resetButton);
-  
-  // Only add emergency button if we're not on public schema
-  if (currentSchema !== 'public') {
-    // Create a more visible reset button for users who are stuck
-    const emergencyButton = document.createElement('button');
-    emergencyButton.id = 'emergency-reset-button';
-    emergencyButton.innerText = 'Emergency: Reset to Public Schema';
-    emergencyButton.style.position = 'fixed';
-    emergencyButton.style.top = '10px';
-    emergencyButton.style.right = '10px';
-    emergencyButton.style.zIndex = '10000';
-    emergencyButton.style.padding = '8px 12px';
-    emergencyButton.style.fontSize = '12px';
-    emergencyButton.style.backgroundColor = '#ff4b4b';
-    emergencyButton.style.color = '#fff';
-    emergencyButton.style.border = 'none';
-    emergencyButton.style.borderRadius = '4px';
-    emergencyButton.style.cursor = 'pointer';
-    emergencyButton.style.fontWeight = 'bold';
-    
-    // Add click handler
-    emergencyButton.addEventListener('click', () => {
-      forceResetToPublicSchema();
-    });
-    
-    // Add to body
-    document.body.appendChild(emergencyButton);
-  }
 };
 
 /**

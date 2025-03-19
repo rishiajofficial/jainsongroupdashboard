@@ -54,12 +54,12 @@ export function SchemaSwitcher({ userRole }: SchemaSwitcherProps) {
       }
 
       // Verify schema access in the background
-      if (schema !== 'public') {
+      if (schema !== 'public' as SchemaType) {
         setIsCheckingSchema(true);
         const accessible = await verifySchemaAccess();
         setIsCheckingSchema(false);
         
-        if (!accessible && schema !== 'public') {
+        if (!accessible && schema !== 'public' as SchemaType) {
           toast({
             title: "Schema Connection Issue",
             description: `Cannot access ${schema} schema. You may need to reset to public schema.`,

@@ -34,7 +34,7 @@ export function Header() {
     
     checkSession();
 
-    // Add emergency schema reset button - this will always be available as a failsafe
+    // Add reset button only in footer (not emergency button)
     addSchemaResetButton();
 
     // Listen for auth changes
