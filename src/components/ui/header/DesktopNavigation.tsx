@@ -25,7 +25,10 @@ export function DesktopNavigation({ isAuthenticated, user, onLogout }: DesktopNa
         {!isAuthenticated ? (
           <PublicNavigation variant="desktop" />
         ) : (
-          <UserMenu user={user} onLogout={onLogout} />
+          <UserMenu 
+            user={user} 
+            onLogout={onLogout} 
+          />
         )}
       </div>
     </nav>

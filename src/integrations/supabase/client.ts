@@ -20,7 +20,7 @@ export const supabase = createClient<Database>(
   SUPABASE_PUBLISHABLE_KEY,
   {
     db: {
-      schema: schema
+      schema: schema as "public" // Type assertion to resolve TS error
     },
     // Set global error handler for type safety issues with schema switching
     global: {

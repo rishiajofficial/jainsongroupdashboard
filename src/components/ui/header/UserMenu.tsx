@@ -19,13 +19,15 @@ import { UserRole } from "@/pages/DashboardPage";
 
 interface UserMenuProps {
   user: {
-    email: string;
+    email?: string;
     fullName?: string;
+    avatarUrl?: string;
+    role?: UserRole;
   } | null;
-  role?: UserRole;
+  onLogout?: () => void;
 }
 
-export function UserMenu({ user, role }: UserMenuProps) {
+export function UserMenu({ user, onLogout }: UserMenuProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -56,10 +58,13 @@ export function UserMenu({ user, role }: UserMenuProps) {
     );
   }
 
+  // Use the custom logout handler if provided, otherwise use the default
+  const logoutHandler = onLogout || handleSignOut;
+
   return (
     <div className="flex items-center gap-2">
       {/* Add the schema switcher for admin users */}
-      {role === 'admin' && <SchemaSwitcher userRole={role} />}
+      {user.role === 'admin' && <SchemaSwitcher userRole={user.role} />}
       
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -69,7 +74,7 @@ export function UserMenu({ user, role }: UserMenuProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel>
-            {user.fullName || user.email}
+            {user.fullName || user.email || "User"}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
@@ -83,7 +88,7 @@ export function UserMenu({ user, role }: UserMenuProps) {
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleSignOut}>
+          <DropdownMenuItem onClick={logoutHandler}>
             <LogOut className="mr-2 h-4 w-4" />
             <span>Log out</span>
           </DropdownMenuItem>

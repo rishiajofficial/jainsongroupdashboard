@@ -12,6 +12,7 @@ import { UserRole } from "@/pages/DashboardPage";
 interface UserData {
   email?: string;
   avatarUrl?: string;
+  fullName?: string;
   role?: UserRole;
 }
 
@@ -58,7 +59,7 @@ export function Header() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('email, avatar_url, role')
+        .select('email, avatar_url, role, full_name')
         .eq('id', userId)
         .single();
 
@@ -86,6 +87,7 @@ export function Header() {
         
         setUser({ 
           email: data.email || "",
+          fullName: data.full_name,
           avatarUrl: avatarUrl,
           role: data.role as UserRole
         });
