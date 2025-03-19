@@ -8,7 +8,7 @@ import { Header } from "@/components/ui/Header";
 import { toast } from "sonner";
 import { DashboardSettingsProvider } from "@/contexts/DashboardSettingsContext";
 import { PageAccessProvider } from "@/contexts/PageAccessContext";
-import { getCurrentSchema } from "@/utils/schemaUtils";
+import { getCurrentSchema, forceResetToPublicSchema } from "@/utils/schemaUtils";
 
 // This is the canonical UserRole type used throughout the application
 // It matches the user_role enum in the Supabase database
@@ -17,6 +17,7 @@ export type UserRole = 'candidate' | 'salesperson' | 'manager' | 'admin';
 const DashboardPage = () => {
   const [userRole, setUserRole] = useState<UserRole>('candidate');
   const [isLoading, setIsLoading] = useState(true);
+  const [schemaError, setSchemaError] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,15 +32,18 @@ const DashboardPage = () => {
           return;
         }
         
-        console.log("Current schema:", getCurrentSchema());
+        const currentSchema = getCurrentSchema();
+        console.log("Current schema:", currentSchema);
         
         // Check if we're coming from a schema switch and have user role info stored
         const schemaUserRole = localStorage.getItem('schema_switch_user_role');
         if (schemaUserRole) {
           console.log("Using stored user role from schema switch:", schemaUserRole);
+          
           // Validate that the stored role is a valid UserRole
-          const validRole = ['admin', 'candidate', 'salesperson', 'manager'].includes(schemaUserRole)
-            ? schemaUserRole as UserRole
+          const validRoles: UserRole[] = ['admin', 'candidate', 'salesperson', 'manager'];
+          const validRole: UserRole = validRoles.includes(schemaUserRole as UserRole) 
+            ? (schemaUserRole as UserRole) 
             : 'candidate';
             
           setUserRole(validRole);
@@ -68,6 +72,9 @@ const DashboardPage = () => {
               if (insertError) {
                 console.error("Error creating profile in new schema:", insertError);
                 toast.error("Failed to create profile in new schema. Using fallback role.");
+                
+                // If there's an error creating a profile, set a schema error flag
+                setSchemaError(true);
               } else {
                 console.log("Successfully created profile in new schema");
                 // Now fetch the profile again to confirm it was created
@@ -86,7 +93,7 @@ const DashboardPage = () => {
               
               // If the profile exists but has a different role than what we expect,
               // update it to match the stored role (this is to fix data inconsistency issues)
-              if (existingProfile.role !== schemaUserRole) {
+              if (existingProfile.role !== validRole) {
                 console.log(`Role mismatch: profile has ${existingProfile.role} but stored role is ${schemaUserRole}. Updating...`);
                 const { error: updateError } = await supabase
                   .from('profiles')
@@ -95,11 +102,13 @@ const DashboardPage = () => {
                 
                 if (updateError) {
                   console.error("Error updating profile role:", updateError);
+                  setSchemaError(true);
                 }
               }
             }
           } catch (error) {
             console.error("Error handling profile after schema switch:", error);
+            setSchemaError(true);
           }
           
           // Clear the schema switch info
@@ -121,6 +130,7 @@ const DashboardPage = () => {
           console.error("Error fetching profile:", profileError);
           console.log("User ID:", session.user.id);
           toast.error("Failed to load profile data");
+          setSchemaError(true);
           return;
         }
         
@@ -133,6 +143,7 @@ const DashboardPage = () => {
       } catch (error) {
         console.error("Dashboard error:", error);
         toast.error("Failed to load dashboard data");
+        setSchemaError(true);
       } finally {
         setIsLoading(false);
       }
@@ -140,6 +151,32 @@ const DashboardPage = () => {
     
     fetchDashboardData();
   }, [navigate]);
+
+  // If there's a schema error, show a button to force reset to public schema
+  if (schemaError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50">
+        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Schema Error</h1>
+          <p className="text-gray-700 mb-6">
+            There was an error loading your profile data. This may be due to a schema configuration issue.
+          </p>
+          <p className="text-gray-600 mb-6">
+            Current schema: <span className="font-semibold">{getCurrentSchema()}</span>
+          </p>
+          <button
+            onClick={() => forceResetToPublicSchema()}
+            className="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-md transition-colors"
+          >
+            Reset to Public Schema
+          </button>
+          <p className="text-sm text-gray-500 mt-4">
+            This will clear schema-related data and log you out.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <PageAccessProvider>
