@@ -8,6 +8,7 @@ import { UserMenu } from "./UserMenu";
 import { MobileMenu } from "./MobileMenu";
 import { PublicNavigation } from "@/components/navigation/PublicNavigation";
 import { UserRole } from "@/pages/DashboardPage";
+import { addSchemaResetButton } from "@/utils/schemaUtils";
 
 interface UserData {
   email?: string;
@@ -32,6 +33,9 @@ export function Header() {
     };
     
     checkSession();
+
+    // Add emergency schema reset button - this will always be available as a failsafe
+    addSchemaResetButton();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {

@@ -41,3 +41,54 @@ export const setCurrentSchema = (schema: SchemaType): void => {
 export const canSwitchSchema = (role: string | undefined): boolean => {
   return role === 'admin';
 };
+
+/**
+ * Force reset to public schema
+ * This can be used as an emergency escape hatch when stuck in a broken schema state
+ */
+export const forceResetToPublicSchema = (): void => {
+  localStorage.setItem(SCHEMA_KEY, 'public');
+  
+  // Clear any schema switch related data
+  localStorage.removeItem('schema_switch_return_path');
+  localStorage.removeItem('schema_switch_user_id');
+  localStorage.removeItem('schema_switch_user_role');
+  
+  console.log("Forcing reset to public schema. The page will reload.");
+  window.location.href = "/dashboard"; // Force redirect to dashboard
+};
+
+/**
+ * Add a reset button to the page when URL includes special query parameter
+ * This is an emergency mechanism to get back to public schema
+ */
+export const addSchemaResetButton = (): void => {
+  // Only run in browser
+  if (typeof window === 'undefined') return;
+  
+  // Check if reset button is already added
+  if (document.getElementById('schema-reset-button')) return;
+  
+  // Create reset button
+  const resetButton = document.createElement('button');
+  resetButton.id = 'schema-reset-button';
+  resetButton.innerText = 'Reset to Public Schema';
+  resetButton.style.position = 'fixed';
+  resetButton.style.bottom = '10px';
+  resetButton.style.right = '10px';
+  resetButton.style.zIndex = '9999';
+  resetButton.style.padding = '10px';
+  resetButton.style.backgroundColor = 'red';
+  resetButton.style.color = 'white';
+  resetButton.style.borderRadius = '5px';
+  resetButton.style.cursor = 'pointer';
+  
+  // Add click handler
+  resetButton.addEventListener('click', () => {
+    forceResetToPublicSchema();
+  });
+  
+  // Add to body
+  document.body.appendChild(resetButton);
+};
+

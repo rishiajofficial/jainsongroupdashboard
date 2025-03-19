@@ -8,6 +8,7 @@ import { Header } from "@/components/ui/Header";
 import { toast } from "sonner";
 import { DashboardSettingsProvider } from "@/contexts/DashboardSettingsContext";
 import { PageAccessProvider } from "@/contexts/PageAccessContext";
+import { getCurrentSchema } from "@/utils/schemaUtils";
 
 // This is the canonical UserRole type used throughout the application
 // It matches the user_role enum in the Supabase database
@@ -30,6 +31,8 @@ const DashboardPage = () => {
           return;
         }
         
+        console.log("Current schema:", getCurrentSchema());
+        
         // Check if we're coming from a schema switch and have user role info stored
         const schemaUserRole = localStorage.getItem('schema_switch_user_role');
         if (schemaUserRole) {
@@ -41,7 +44,7 @@ const DashboardPage = () => {
             // Check if profile exists
             const { data: existingProfile, error: profileError } = await supabase
               .from('profiles')
-              .select('id')
+              .select('id, role')
               .eq('id', session.user.id)
               .single();
             
@@ -53,13 +56,41 @@ const DashboardPage = () => {
                 .insert({
                   id: session.user.id,
                   email: session.user.email,
-                  role: schemaUserRole as UserRole
+                  role: schemaUserRole as UserRole,
+                  full_name: session.user.user_metadata?.full_name || ''
                 });
                 
               if (insertError) {
                 console.error("Error creating profile in new schema:", insertError);
+                toast.error("Failed to create profile in new schema. Using fallback role.");
               } else {
                 console.log("Successfully created profile in new schema");
+                // Now fetch the profile again to confirm it was created
+                const { data: createdProfile } = await supabase
+                  .from('profiles')
+                  .select('role')
+                  .eq('id', session.user.id)
+                  .single();
+                  
+                if (createdProfile) {
+                  console.log("Confirmed role in new schema:", createdProfile.role);
+                }
+              }
+            } else {
+              console.log("Found existing profile in schema with role:", existingProfile.role);
+              
+              // If the profile exists but has a different role than what we expect,
+              // update it to match the stored role (this is to fix data inconsistency issues)
+              if (existingProfile.role !== schemaUserRole) {
+                console.log(`Role mismatch: profile has ${existingProfile.role} but stored role is ${schemaUserRole}. Updating...`);
+                const { error: updateError } = await supabase
+                  .from('profiles')
+                  .update({ role: schemaUserRole })
+                  .eq('id', session.user.id);
+                
+                if (updateError) {
+                  console.error("Error updating profile role:", updateError);
+                }
               }
             }
           } catch (error) {
@@ -83,11 +114,17 @@ const DashboardPage = () => {
           
         if (profileError) {
           console.error("Error fetching profile:", profileError);
+          console.log("User ID:", session.user.id);
           toast.error("Failed to load profile data");
           return;
         }
         
-        setUserRole(profileData?.role || 'candidate');
+        if (profileData?.role) {
+          console.log("Setting user role from profile:", profileData.role);
+          setUserRole(profileData.role || 'candidate');
+        } else {
+          console.log("No role found in profile, defaulting to candidate");
+        }
       } catch (error) {
         console.error("Dashboard error:", error);
         toast.error("Failed to load dashboard data");
