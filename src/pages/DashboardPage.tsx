@@ -30,6 +30,50 @@ const DashboardPage = () => {
           return;
         }
         
+        // Check if we're coming from a schema switch and have user role info stored
+        const schemaUserRole = localStorage.getItem('schema_switch_user_role');
+        if (schemaUserRole) {
+          console.log("Using stored user role from schema switch:", schemaUserRole);
+          setUserRole(schemaUserRole as UserRole);
+          
+          // Now try to get or create the profile in the new schema
+          try {
+            // Check if profile exists
+            const { data: existingProfile, error: profileError } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('id', session.user.id)
+              .single();
+            
+            if (profileError || !existingProfile) {
+              console.log("Profile not found in new schema. Creating profile...");
+              // Create a profile in the new schema with the role from the previous schema
+              const { error: insertError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: session.user.id,
+                  email: session.user.email,
+                  role: schemaUserRole as UserRole
+                });
+                
+              if (insertError) {
+                console.error("Error creating profile in new schema:", insertError);
+              } else {
+                console.log("Successfully created profile in new schema");
+              }
+            }
+          } catch (error) {
+            console.error("Error handling profile after schema switch:", error);
+          }
+          
+          // Clear the schema switch info
+          localStorage.removeItem('schema_switch_user_id');
+          localStorage.removeItem('schema_switch_user_role');
+          
+          setIsLoading(false);
+          return;
+        }
+        
         // Get user profile data
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')

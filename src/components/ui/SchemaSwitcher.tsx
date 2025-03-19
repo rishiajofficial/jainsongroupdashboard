@@ -12,6 +12,7 @@ import { Database } from "lucide-react";
 import { getCurrentSchema, setCurrentSchema, SchemaType, canSwitchSchema } from "@/utils/schemaUtils";
 import { UserRole } from "@/pages/DashboardPage";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SchemaSwitcherProps {
   userRole?: UserRole;
@@ -31,7 +32,7 @@ export function SchemaSwitcher({ userRole }: SchemaSwitcherProps) {
     return null;
   }
 
-  const handleSchemaChange = (schema: SchemaType) => {
+  const handleSchemaChange = async (schema: SchemaType) => {
     if (schema === currentSchema) return;
     
     toast({
@@ -39,10 +40,33 @@ export function SchemaSwitcher({ userRole }: SchemaSwitcherProps) {
       description: `Switching to ${schema} schema. The page will reload.`,
     });
     
-    // Short delay to let the toast appear before reload
-    setTimeout(() => {
-      setCurrentSchema(schema);
-    }, 1000);
+    try {
+      // Get the current session to ensure it persists across schema switch
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        // Store user information in localStorage to help maintain state across schema switch
+        localStorage.setItem('schema_switch_user_id', session.user.id);
+        localStorage.setItem('schema_switch_user_role', userRole || 'candidate');
+        
+        // Log information about the current session to help with debugging
+        console.log("Preserving session during schema switch:", {
+          userId: session.user.id,
+          userRole: userRole
+        });
+      }
+      
+      // Short delay to let the toast appear before reload
+      setTimeout(() => {
+        setCurrentSchema(schema);
+      }, 1000);
+    } catch (error) {
+      console.error("Error preserving session during schema switch:", error);
+      // Continue with schema switch even if session preservation fails
+      setTimeout(() => {
+        setCurrentSchema(schema);
+      }, 1000);
+    }
   };
 
   return (

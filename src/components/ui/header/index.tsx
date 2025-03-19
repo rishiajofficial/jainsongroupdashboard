@@ -49,6 +49,16 @@ export function Header() {
       }
     });
 
+    // Check if we just switched schemas and should navigate to a saved path
+    const returnPath = localStorage.getItem('schema_switch_return_path');
+    if (returnPath) {
+      localStorage.removeItem('schema_switch_return_path');
+      // Only navigate if we're not already on that path
+      if (window.location.pathname !== returnPath) {
+        window.location.pathname = returnPath;
+      }
+    }
+
     // Cleanup subscription on unmount
     return () => {
       subscription.unsubscribe();
@@ -57,6 +67,7 @@ export function Header() {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      // First try to fetch profile from the current schema
       const { data, error } = await supabase
         .from('profiles')
         .select('email, avatar_url, role, full_name')
@@ -65,6 +76,24 @@ export function Header() {
 
       if (error) {
         console.error("Error fetching profile:", error);
+        
+        // If there was a schema switch, check if we stored user info
+        const schemaUserRole = localStorage.getItem('schema_switch_user_role');
+        if (schemaUserRole) {
+          console.log("Using stored user role from schema switch:", schemaUserRole);
+          // Use the stored user role until the profile is properly created in the new schema
+          setUser({ 
+            email: "",
+            role: schemaUserRole as UserRole
+          });
+          
+          // Clear the stored info to prevent reuse on non-schema switches
+          localStorage.removeItem('schema_switch_user_id');
+          localStorage.removeItem('schema_switch_user_role');
+          
+          return;
+        }
+        
         setUser({ email: "" });
         return;
       }
@@ -91,6 +120,10 @@ export function Header() {
           avatarUrl: avatarUrl,
           role: data.role as UserRole
         });
+        
+        // Clear any schema switch user info if present
+        localStorage.removeItem('schema_switch_user_id');
+        localStorage.removeItem('schema_switch_user_role');
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
