@@ -1,99 +1,94 @@
 
+import { Fragment } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogOut, User } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { UserCircle, LogOut, Settings, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { SchemaSwitcher } from "@/components/ui/SchemaSwitcher";
+import { useToast } from "@/components/ui/use-toast";
 import { UserRole } from "@/pages/DashboardPage";
 
-interface UserData {
-  email?: string;
-  avatarUrl?: string;
+interface UserMenuProps {
+  user: {
+    email: string;
+    fullName?: string;
+  } | null;
   role?: UserRole;
 }
 
-interface UserMenuProps {
-  user: UserData | null;
-  onLogout: () => Promise<void>;
-}
-
-// Helper function to get role badge color
-const getRoleBadgeVariant = (role: UserRole) => {
-  switch (role) {
-    case 'admin':
-      return 'destructive';
-    case 'manager':
-      return 'default';
-    case 'salesperson':
-      return 'secondary';
-    case 'candidate':
-    default:
-      return 'secondary';
-  }
-};
-
-export function UserMenu({ user, onLogout }: UserMenuProps) {
+export function UserMenu({ user, role }: UserMenuProps) {
   const navigate = useNavigate();
-  
-  const handleProfileClick = () => {
-    console.log("Profile button clicked, navigating to /user-profile");
-    navigate("/user-profile");
+  const { toast } = useToast();
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        description: "You have been signed out successfully.",
+      });
+      navigate("/");
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast({
+        variant: "destructive",
+        description: "Failed to sign out. Please try again.",
+      });
+    }
   };
-  
+
+  if (!user) {
+    return (
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" onClick={() => navigate("/login")}>
+          Log in
+        </Button>
+        <Button onClick={() => navigate("/signup")}>Sign up</Button>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex items-center gap-4">
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.avatarUrl || ""} alt="User" />
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      {user?.email?.charAt(0).toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>
-                  <div className="flex items-center justify-between">
-                    <span>My Account</span>
-                    {user?.role && (
-                      <Badge variant={getRoleBadgeVariant(user.role)} className="ml-2 capitalize">
-                        {user.role}
-                      </Badge>
-                    )}
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleProfileClick}>
-                  <User className="h-4 w-4 mr-2" />
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={onLogout}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Account</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+    <div className="flex items-center gap-2">
+      {/* Add the schema switcher for admin users */}
+      {role === 'admin' && <SchemaSwitcher userRole={role} />}
+      
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <UserCircle className="h-5 w-5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel>
+            {user.fullName || user.email}
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuItem onClick={() => navigate("/profile")}>
+              <User className="mr-2 h-4 w-4" />
+              <span>Profile</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/settings")}>
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Settings</span>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleSignOut}>
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Log out</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
