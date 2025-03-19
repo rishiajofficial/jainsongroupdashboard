@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrentSchema } from "@/utils/schemaUtils";
 
 interface UserProfileData {
   fullName: string;
@@ -30,6 +31,9 @@ export const ProfileForm = ({ initialData }: { initialData: UserProfileData }) =
   // Save profile data to Supabase
   const saveProfile = async () => {
     setIsSaving(true);
+    const currentSchema = getCurrentSchema();
+    console.log(`Saving profile data in schema: ${currentSchema}`);
+    
     try {
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -38,7 +42,10 @@ export const ProfileForm = ({ initialData }: { initialData: UserProfileData }) =
         return;
       }
 
-      const { error } = await supabase
+      // Debug information to track the request
+      console.log(`Updating profile for user ID: ${session.user.id} in schema: ${currentSchema}`);
+
+      const { data, error } = await supabase
         .from('profiles')
         .update({
           full_name: userProfile.fullName,
@@ -47,17 +54,19 @@ export const ProfileForm = ({ initialData }: { initialData: UserProfileData }) =
           position: userProfile.position,
           updated_at: new Date().toISOString()
         })
-        .eq('id', session.user.id);
+        .eq('id', session.user.id)
+        .select();
 
       if (error) {
-        console.error("Error saving profile:", error);
+        console.error(`Error saving profile in schema ${currentSchema}:`, error);
         toast.error("Failed to save profile data");
         return;
       }
 
-      toast.success("Profile data saved successfully");
+      console.log(`Profile updated successfully in schema ${currentSchema}:`, data);
+      toast.success(`Profile data saved successfully in ${currentSchema} schema`);
     } catch (error) {
-      console.error("Error in save profile:", error);
+      console.error(`Error in save profile in schema ${currentSchema}:`, error);
       toast.error("Failed to save profile data");
     } finally {
       setIsSaving(false);
@@ -109,10 +118,15 @@ export const ProfileForm = ({ initialData }: { initialData: UserProfileData }) =
           />
         </div>
       </div>
-      <Button onClick={saveProfile} className="w-full sm:w-auto" disabled={isSaving}>
-        <Save className="mr-2 h-4 w-4" />
-        {isSaving ? "Saving..." : "Save Profile"}
-      </Button>
+      <div className="flex flex-col space-y-2 pt-4">
+        <Button onClick={saveProfile} className="w-full sm:w-auto" disabled={isSaving}>
+          <Save className="mr-2 h-4 w-4" />
+          {isSaving ? "Saving..." : "Save Profile"}
+        </Button>
+        <div className="text-xs text-muted-foreground">
+          Saving to schema: <span className="font-medium">{getCurrentSchema()}</span>
+        </div>
+      </div>
     </>
   );
 };

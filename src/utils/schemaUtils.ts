@@ -126,8 +126,10 @@ export const verifySchemaAccess = async (): Promise<boolean> => {
   try {
     const { supabase } = await import('@/integrations/supabase/client');
     
+    console.log(`Verifying access to schema: ${getCurrentSchema()}`);
+    
     // Try a simple query - just fetch a single row from profiles with limit 1
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('id')
       .limit(1);
@@ -137,6 +139,9 @@ export const verifySchemaAccess = async (): Promise<boolean> => {
       localStorage.setItem('schema_access_error', 'true');
       return false;
     }
+    
+    // Log the result to help with debugging
+    console.log(`Schema access verification successful, found ${data?.length || 0} profiles`);
     
     // If no error, schema is accessible
     localStorage.removeItem('schema_access_error');

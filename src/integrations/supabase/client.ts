@@ -27,12 +27,14 @@ export const supabase = createClient<Database>(
   SUPABASE_PUBLISHABLE_KEY,
   {
     db: {
-      schema: 'public' // Must be 'public' for the client to work properly
+      schema: 'public' // This must be 'public' for the client to work properly
     },
     global: {
       headers: {
-        // Use PostgreSQL's ability to set the search_path for a session
+        // Use PostgreSQL's search_path setting to determine schema priority
+        // This instructs PostgreSQL to look in our specified schema first, then public
         'x-schema-name': safeSchema,
+        'X-Schema-Search-Path': `${safeSchema},public`,
         'X-Postgres-Features': 'multiSchema'
       }
     },

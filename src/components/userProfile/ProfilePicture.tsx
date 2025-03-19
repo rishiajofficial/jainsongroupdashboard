@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrentSchema } from "@/utils/schemaUtils";
 
 interface ProfilePictureProps {
   avatarUrl: string | null;
@@ -15,6 +16,7 @@ interface ProfilePictureProps {
 
 export const ProfilePicture = ({ avatarUrl, userInitial }: ProfilePictureProps) => {
   const [isUploading, setIsUploading] = useState(false);
+  const currentSchema = getCurrentSchema();
   
   // Upload avatar image
   const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,9 +44,9 @@ export const ProfilePicture = ({ avatarUrl, userInitial }: ProfilePictureProps) 
       }
       
       const userId = session.user.id;
-      const filePath = `${userId}.${fileExt}`;
+      const filePath = `${userId}-${currentSchema}.${fileExt}`; // Include schema in filename
       
-      console.log("Uploading file to path:", filePath);
+      console.log(`Uploading file to path: ${filePath} in schema: ${currentSchema}`);
       
       // Upload the file to Supabase storage
       const { error: uploadError, data: uploadData } = await supabase.storage
@@ -52,18 +54,18 @@ export const ProfilePicture = ({ avatarUrl, userInitial }: ProfilePictureProps) 
         .upload(filePath, file, { upsert: true });
         
       if (uploadError) {
-        console.error("Upload error:", uploadError);
+        console.error(`Upload error in schema ${currentSchema}:`, uploadError);
         throw uploadError;
       }
       
-      console.log("Upload successful:", uploadData);
+      console.log(`Upload successful in schema ${currentSchema}:`, uploadData);
       
       // Get the public URL
       const { data } = await supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
         
-      console.log("Public URL:", data);
+      console.log(`Public URL in schema ${currentSchema}:`, data);
       
       // Update the profile with the avatar URL
       const { error: updateError } = await supabase
@@ -74,17 +76,17 @@ export const ProfilePicture = ({ avatarUrl, userInitial }: ProfilePictureProps) 
         .eq('id', userId);
         
       if (updateError) {
-        console.error("Profile update error:", updateError);
+        console.error(`Profile update error in schema ${currentSchema}:`, updateError);
         throw updateError;
       }
       
-      toast.success("Profile picture uploaded successfully");
+      toast.success(`Profile picture uploaded successfully to ${currentSchema} schema`);
       
       // Refresh the page to show the new avatar
       window.location.reload();
       
     } catch (error) {
-      console.error("Error uploading avatar:", error);
+      console.error(`Error uploading avatar in schema ${currentSchema}:`, error);
       toast.error("Failed to upload profile picture");
     } finally {
       setIsUploading(false);
@@ -104,13 +106,13 @@ export const ProfilePicture = ({ avatarUrl, userInitial }: ProfilePictureProps) 
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `profile-picture.${blob.type.split('/')[1]}`;
+      a.download = `profile-picture-${currentSchema}.${blob.type.split('/')[1]}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error("Error downloading avatar:", error);
+      console.error(`Error downloading avatar from schema ${currentSchema}:`, error);
       toast.error("Failed to download profile picture");
     }
   };
@@ -156,6 +158,9 @@ export const ProfilePicture = ({ avatarUrl, userInitial }: ProfilePictureProps) 
         </div>
         <p className="text-xs text-muted-foreground">
           Recommended: Square JPG, PNG. Max 5MB.
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Current schema: <span className="font-medium">{currentSchema}</span>
         </p>
       </div>
     </div>
