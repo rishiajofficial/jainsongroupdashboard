@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,7 +61,7 @@ const DashboardPage = () => {
                 .insert({
                   id: session.user.id,
                   email: session.user.email,
-                  role: schemaUserRole as UserRole,
+                  role: validRole,
                   full_name: session.user.user_metadata?.full_name || ''
                 });
                 
@@ -89,7 +90,7 @@ const DashboardPage = () => {
                 console.log(`Role mismatch: profile has ${existingProfile.role} but stored role is ${schemaUserRole}. Updating...`);
                 const { error: updateError } = await supabase
                   .from('profiles')
-                  .update({ role: schemaUserRole })
+                  .update({ role: validRole })
                   .eq('id', session.user.id);
                 
                 if (updateError) {
